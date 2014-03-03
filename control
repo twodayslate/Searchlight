@@ -1,0 +1,9 @@
+Package: com.twodayslate.listlauncher7
+Name: ListLauncher7
+Depends: mobilesubstrate, applist
+Version: 1.0
+Architecture: iphoneos-arm
+Description: Lunch apps fast!
+Maintainer: twodayslate
+Author: twodayslate
+Section: Tweaks

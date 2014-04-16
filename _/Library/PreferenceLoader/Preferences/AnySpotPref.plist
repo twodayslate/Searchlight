@@ -1,0 +1,10 @@
+{
+    entry = {
+	bundle = ListLauncherPref;
+	cell = PSLinkCell;
+	detail = ListLauncherPrefListController;
+	icon = ListLauncherPref.png;
+	isController = 1;
+	label = "ListLauncher7";
+    };
+}

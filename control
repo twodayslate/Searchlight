@@ -1,7 +1,7 @@
-Package: com.twodayslate.listlauncher7
+Package: org.thebigboss.listlauncher7
 Name: ListLauncher7
 Depends: mobilesubstrate, applist
-Version: 1.0
+Version: 1.1
 Architecture: iphoneos-arm
 Description: Lunch apps fast!
 Maintainer: twodayslate

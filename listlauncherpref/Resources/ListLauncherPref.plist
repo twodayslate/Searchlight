@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>items</key>
+	<array>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkCell</string>
+			<key>bundle</key>
+			<string>AppList</string>
+			<key>isController</key>
+			<string>1</string>
+			<key>label</key>
+			<string>Blacklist</string>
+			<key>icon</key>
+			<string>Blacklist.png</string>
+			<key>ALAllowsSelection</key>
+			<string>1</string>
+			<key>ALChangeNotification</key>
+			<string>org.thebigboss.listlauncher7/settingschanged</string>
+			<key>ALSectionDescriptors</key>
+			<array>
+				<dict>
+					<key>footer-title</key>
+					<string>Use the blacklist to disable applications from showing up in the launcher.</string>
+					<key>items</key>
+					<array/>
+				</dict>
+				<dict>
+					<key>cell-class-name</key>
+					<string>ALSwitchCell</string>
+					<key>icon-size</key>
+					<string>29</string>
+					<key>suppress-hidden-apps</key>
+					<string>0</string>
+					<key>title</key>
+					<string>All Applications</string>
+				</dict>
+			</array>
+			<key>ALSettingsKeyPrefix</key>
+			<string>Blacklist-</string>
+			<key>ALSettingsPath</key>
+			<string>/var/mobile/Library/Preferences/org.thebigboss.listlauncher7.plist</string>
+		</dict>
+	</array>
+	<key>title</key>
+	<string>ListLauncher7</string>
+</dict>
+</plist>

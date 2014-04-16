@@ -5,6 +5,9 @@
 -(BOOL)shouldDisplayListLauncher;
 -(void)dismiss;
 -(void)_fadeForLaunchWithDuration:(double)arg1 completion:(/*^block*/ id)arg2 ;
+-(int)numberOfSectionsInTableView:(id)arg1;
+-(void)_updateTableContents;
++(id)sharedInstance;
 @end
 
 @interface SBSearchHeader
@@ -50,7 +53,8 @@
 
 
 static ALApplicationList *apps = nil;
-static NSArray *displayIdentifiers = nil;
+static NSMutableDictionary *blacklist = nil;
+static NSMutableArray *displayIdentifiers = nil;
 
 %hook SBSearchViewController
 %new 
@@ -60,22 +64,13 @@ static NSArray *displayIdentifiers = nil;
 	return [currentText isEqualToString:@""];
 }
 
--(id)init {
-	apps = [ALApplicationList sharedApplicationList];
-
-	displayIdentifiers = [[apps.applications allKeys] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
-	    return [[apps.applications objectForKey:obj1] caseInsensitiveCompare:[apps.applications objectForKey:obj2]];}];
-	[displayIdentifiers retain];
-	return %orig;
-}
-
 -(int)tableView:(id)arg1 numberOfRowsInSection:(int)arg2 {
-	if([self shouldDisplayListLauncher]) return [apps applicationCount];
+	if([self shouldDisplayListLauncher] && arg2 == [self numberOfSectionsInTableView:arg1]-1) return [displayIdentifiers count] - 1;
 	return %orig;
 }
 
 -(int)numberOfSectionsInTableView:(id)arg1 	{
-	if([self shouldDisplayListLauncher]) return 1;
+	if([self shouldDisplayListLauncher]) return %orig + 1;
 	return %orig;
 }
 
@@ -94,7 +89,7 @@ static NSArray *displayIdentifiers = nil;
 
 -(id)tableView:(id)arg1 cellForRowAtIndexPath:(NSIndexPath *)arg2 {
 	if([self shouldDisplayListLauncher]) {
-		SBSearchTableViewCell *cell = [MSHookIvar<UITableView *>(self, "_tableView") dequeueReusableCellWithIdentifier:@"dude"];
+		SBSearchTableViewCell *cell = [arg1 dequeueReusableCellWithIdentifier:@"dude"];
 		NSString *name = [apps valueForKey:@"displayName" forDisplayIdentifier:[displayIdentifiers objectAtIndex:arg2.row]];
 		//NSLog(@"Name = %@",name);
 		if(cell) {  }
@@ -149,3 +144,33 @@ static NSArray *displayIdentifiers = nil;
 }
 
 %end
+
+static void loadPrefs() {
+    blacklist = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/org.thebigboss.listlauncher7.plist"];
+
+	apps = [ALApplicationList sharedApplicationList];
+
+	NSArray *displayIdentifiersTemp = [[apps.applications allKeys] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+	    return [[apps.applications objectForKey:obj1] caseInsensitiveCompare:[apps.applications objectForKey:obj2]];}];
+
+	displayIdentifiers = [NSMutableArray arrayWithArray:displayIdentifiersTemp];
+
+	for(NSString* key in [blacklist allKeys]) {
+		if([[blacklist valueForKey:key] boolValue]) {
+			[displayIdentifiers removeObject:[key stringByReplacingOccurrencesOfString:@"Blacklist-" withString:@""]];
+		}
+	}
+
+	[displayIdentifiers retain];
+	[blacklist release];
+	SBSearchViewController *sview = [%c(SBSearchViewController) sharedInstance];
+	UITableView *stable = MSHookIvar<UITableView *>(sview, "_tableView");
+	[stable reloadData];
+	// _tableView
+	// [tableView reloadData];
+}
+
+%ctor {
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("org.thebigboss.listlauncher7/settingschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
+    loadPrefs();
+}

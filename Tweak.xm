@@ -137,7 +137,7 @@ static NSMutableArray *displayIdentifiers = nil;
 
 -(id)tableView:(id)arg1 viewForHeaderInSection:(int)arg2 {
 	SBSearchTableHeaderView *header = %orig;
-	if([self shouldDisplayListLauncher]) {
+	if([self shouldDisplayListLauncher] && arg2 == [self numberOfSectionsInTableView:arg1]-1) {
 		[header setTitle:@"LISTLAUNCHER7"];
 	}
 	return header;

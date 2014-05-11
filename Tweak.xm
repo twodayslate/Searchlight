@@ -65,7 +65,7 @@ static NSMutableArray *displayIdentifiers = nil;
 }
 
 -(int)tableView:(id)arg1 numberOfRowsInSection:(int)arg2 {
-	if([self shouldDisplayListLauncher] && arg2 == [self numberOfSectionsInTableView:arg1]-1) return [displayIdentifiers count] - 1;
+	if([self shouldDisplayListLauncher] && arg2 == [self numberOfSectionsInTableView:arg1]-1) return [displayIdentifiers count];
 	return %orig;
 }
 
@@ -88,6 +88,7 @@ static NSMutableArray *displayIdentifiers = nil;
 }
 
 -(id)tableView:(id)arg1 cellForRowAtIndexPath:(NSIndexPath *)arg2 {
+	if(arg2.row > [displayIdentifiers count]-1) { return %orig; } // fix for SpotDefine
 	if([self shouldDisplayListLauncher]) {
 		SBSearchTableViewCell *cell = [arg1 dequeueReusableCellWithIdentifier:@"dude"];
 		NSString *name = [apps valueForKey:@"displayName" forDisplayIdentifier:[displayIdentifiers objectAtIndex:arg2.row]];
@@ -129,7 +130,7 @@ static NSMutableArray *displayIdentifiers = nil;
 	    SBIconController *cont = [%c(SBIconController) sharedInstance];
 	    SBIconModel *model = [cont model];
 		SBIcon *icon = [model expectedIconForDisplayIdentifier:displayIdentifier];
-		[self _fadeForLaunchWithDuration:0.25f completion:^void{[icon launchFromLocation:4];}];
+		[self _fadeForLaunchWithDuration:0.3f completion:^void{[icon launchFromLocation:4];}];
 		
 	    //[(SpringBoard *)[UIApplication sharedApplication] launchApplicationWithIdentifier:displayIdentifier suspended:NO];
 	} else	%orig;
@@ -164,10 +165,9 @@ static void loadPrefs() {
 	[displayIdentifiers retain];
 	[blacklist release];
 	SBSearchViewController *sview = [%c(SBSearchViewController) sharedInstance];
+	//[sview _updateTableContents];
 	UITableView *stable = MSHookIvar<UITableView *>(sview, "_tableView");
 	[stable reloadData];
-	// _tableView
-	// [tableView reloadData];
 }
 
 %ctor {

@@ -3,7 +3,7 @@ Name: ListLauncher7
 Depends: mobilesubstrate, applist
 Version: 1.1
 Architecture: iphoneos-arm
-Description: Lunch apps fast!
+Description: Launch apps fast!
 Maintainer: twodayslate
 Author: twodayslate
 Section: Tweaks

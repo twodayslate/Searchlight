@@ -4,7 +4,7 @@ ARCHS = armv7 armv7s arm64
 include theos/makefiles/common.mk
 
 BUNDLE_NAME = ListLauncherPref
-ListLauncherPref_FILES = ListLauncherPref.mm
+ListLauncherPref_FILES = ListLauncherPref.mm AboutPref.mm
 ListLauncherPref_INSTALL_PATH = /Library/PreferenceBundles
 ListLauncherPref_FRAMEWORKS = UIKit
 ListLauncherPref_PRIVATE_FRAMEWORKS = Preferences

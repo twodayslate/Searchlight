@@ -60,7 +60,7 @@ static ALApplicationList *apps = nil;
 static NSMutableArray *favoritesDisplayIdentifiers = nil;
 static NSMutableArray *listLauncherDisplayIdentifiers = nil;
 
-static bool favorites = false;
+static bool favorites, logging = false;
 static bool listlauncher = true;
 static NSMutableArray *alphabet = nil;
 static NSMutableArray *indexPositions = nil; 
@@ -84,6 +84,7 @@ static NSMutableArray *indexPositions = nil;
 }
 
 -(int)tableView:(UITableView *)arg1 numberOfRowsInSection:(int)arg2 {
+	if(logging) %log;
 	if([self shouldDisplayListLauncher]) {
 		if(favorites) {
 			if(listlauncher) {
@@ -105,6 +106,7 @@ static NSMutableArray *indexPositions = nil;
 }
 
 -(int)numberOfSectionsInTableView:(id)arg1 	{
+	if(logging) %log;
 	int ans = 0; 
 	if(favorites) ans = ans + 1;
 	if(listlauncher) ans = ans + 1;
@@ -123,18 +125,18 @@ static NSMutableArray *indexPositions = nil;
 	// }
 	// else { return 0; }
 	int numSections = [tableview numberOfSections];
-	NSLog(@"numSections = %d",numSections);
+	if(logging) NSLog(@"ListLauncher7 - numSections = %d",numSections);
 
 	if(favorites && index == numSections - 2) { return numSections - 2; }
 	if(favorites && listlauncher && index > numSections - 2) {
 		if(index == numSections - 1) return numSections - 1;
 
-		NSLog(@"index positions = %@",indexPositions);
+		if(logging) NSLog(@"index positions = %@",indexPositions);
 
-		NSLog(@"Before, indexPositions size = %i",(int)[indexPositions count]);
+		if(logging) NSLog(@"Before, indexPositions size = %i",(int)[indexPositions count]);
 		id value = [indexPositions objectAtIndex:index];
 		int i = [[indexPositions objectAtIndex:index] integerValue];
-		NSLog(@"After value = %d = %@",i,value);
+		if(logging) NSLog(@"After value = %d = %@",i,value);
 
 		[tableview scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:i inSection:numSections - 1] atScrollPosition:UITableViewScrollPositionTop animated:NO];
 		// http://the-useful.blogspot.com/2011/10/uitableview-section-index-view-without.html
@@ -142,7 +144,7 @@ static NSMutableArray *indexPositions = nil;
 	if(listlauncher) {
 		id value = [indexPositions objectAtIndex:index];
 		int i = [[indexPositions objectAtIndex:index] integerValue];
-		NSLog(@"After value = %d = %@",i,value);
+		if(logging) NSLog(@"After value = %d = %@",i,value);
 
 		[tableview scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:i inSection:numSections - 1] atScrollPosition:UITableViewScrollPositionTop animated:NO];
 	}
@@ -151,11 +153,13 @@ static NSMutableArray *indexPositions = nil;
 }
 
 -(BOOL)tableView:(id)arg1 wantsHeaderForSection:(int)arg2 {
+	if(logging) %log;
 	//if([self shouldDisplayListLauncher]) return NO;
 	return %orig;
 }
 
 -(BOOL)_hasResults {
+	if(logging) %log;
 	if([self shouldDisplayListLauncher] && (listlauncher || favorites)) {
 		return YES;
 	}
@@ -163,6 +167,7 @@ static NSMutableArray *indexPositions = nil;
 }
 
 -(id)tableView:(id)arg1 cellForRowAtIndexPath:(NSIndexPath *)arg2 {
+	if(logging) %log;
 	if(arg2.row > [listLauncherDisplayIdentifiers count]-1) { return %orig; } // fix for SpotDefine
 	if([self shouldDisplayListLauncher]) {
 
@@ -213,6 +218,7 @@ static NSMutableArray *indexPositions = nil;
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+	if(logging) %log;
     if ([self shouldDisplayListLauncher]) {
     	[self dismiss];
 
@@ -266,14 +272,14 @@ static NSMutableArray *indexPositions = nil;
 %end
 
 static void createAlphabet() {
-	NSLog(@"Inside");
+	if(logging) NSLog(@"ListLauncher7 - Inside createAlphabet");
 	alphabet = [NSMutableArray arrayWithObjects:@"A",@"B",@"C",@"D",@"E",@"F",@"G", @"H",@"I",@"J",@"K",@"L",@"M",@"N",@"O",@"P",@"Q",@"R",@"S",@"T",@"U",@"V",@"W",@"X",@"Y",@"Z",nil];
 	
 	if(listlauncher) {
 		NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"[a-zA-Z]" options:0 error:NULL];
 		NSString *firstAppName = [[apps valueForKey:@"displayName" forDisplayIdentifier:[listLauncherDisplayIdentifiers objectAtIndex:0]] substringToIndex:1];
 		NSTextCheckingResult *match = [regex firstMatchInString:firstAppName options:0 range:NSMakeRange(0, [firstAppName length])];
-		NSLog(@"Match = %@",match);
+		if(logging) NSLog(@"Match = %@",match);
 		if(!match) { NSLog(@" removed first inside"); 
 			[alphabet insertObject:@"#" atIndex:0];
 		}
@@ -281,22 +287,28 @@ static void createAlphabet() {
 
 	indexPositions = [NSMutableArray arrayWithArray:alphabet]; 
 
-	NSLog(@"Before modifying = %@",indexPositions);
+	if(logging) NSLog(@"Before modifying = %@",indexPositions);
+
 	for(int i = 0; i < [indexPositions count]; i++) {
+		if(logging) NSLog(@"i = %d",i);
 		for(int identifierIndex = 0; identifierIndex < [listLauncherDisplayIdentifiers count]; identifierIndex++) {
+			if(logging) NSLog(@"identifierIndex = %d",identifierIndex);
 			if([[apps valueForKey:@"displayName" forDisplayIdentifier:[listLauncherDisplayIdentifiers objectAtIndex:identifierIndex]] hasPrefix:[alphabet objectAtIndex:i]]) {
 				NSInteger myInt = identifierIndex;
 				NSNumber *myNSNumber = [[NSNumber alloc] initWithInt:myInt];
 				[indexPositions replaceObjectAtIndex:i withObject:myNSNumber];
-				i++;
+				break;
 			}
 		}
 	}
 
+	if(logging) NSLog(@"Done with first loop");
+
 	for(int i = 0; i < [indexPositions count]; i++) {
+		if(logging) NSLog(@"i = %d",i);
 		if([[indexPositions objectAtIndex:i] integerValue] == 0 && i > 0) {
 			if(!( [[indexPositions objectAtIndex:i] isEqual:@"#"] || [[indexPositions objectAtIndex:i] isEqual:@" "] || [[indexPositions objectAtIndex:i] isEqual:@"☆"])) {
-				NSLog(@"Removing %@ at index %d",[alphabet objectAtIndex:i],i);
+				if(logging) NSLog(@"Removing %@ at index %d",[alphabet objectAtIndex:i],i);
 				[alphabet removeObjectAtIndex:i];
 				[indexPositions removeObjectAtIndex:i];
 				i = 0;
@@ -311,7 +323,7 @@ static void createAlphabet() {
 			[indexPositions insertObject:@"0" atIndex:0];
 	}
 
-	NSLog(@"After modifying = %@",indexPositions);
+	if(logging) NSLog(@"After modifying = %@",indexPositions);
 
 	[indexPositions retain];
 	[alphabet retain];
@@ -319,9 +331,12 @@ static void createAlphabet() {
 }
 
 static void loadPrefs() {
+
 	NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/org.thebigboss.listlauncher7.plist"];
 
-	NSLog(@"Settings = %@",settings);
+	logging = [[settings objectForKey:@"logging_enabled"] boolValue];
+
+	if(logging) NSLog(@"ListLauncher7 Settings = %@",settings);
 
     favorites = [[settings objectForKey:@"favorites_enabled"] boolValue]; 
     listlauncher = [[settings objectForKey:@"listlauncher_enabled"] boolValue]; 
@@ -377,6 +392,7 @@ static void loadPrefs() {
 
 %ctor {
 	dlopen("/Library/MobileSubstrate/DynamicLibraries/SpotDefine.dylib", RTLD_NOW);
+	dlopen("/Library/MobileSubstrate/DynamicLibraries/SearchPlus.dylib", RTLD_NOW);
     //CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("org.thebigboss.listlauncher7/settingschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
     
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("org.thebigboss.listlauncher7/saved"), NULL, CFNotificationSuspensionBehaviorCoalesce);

@@ -293,7 +293,7 @@ static void createAlphabet() {
 		if(logging) NSLog(@"i = %d",i);
 		for(int identifierIndex = 0; identifierIndex < [listLauncherDisplayIdentifiers count]; identifierIndex++) {
 			if(logging) NSLog(@"identifierIndex = %d",identifierIndex);
-			if([[apps valueForKey:@"displayName" forDisplayIdentifier:[listLauncherDisplayIdentifiers objectAtIndex:identifierIndex]] hasPrefix:[alphabet objectAtIndex:i]]) {
+			if([[[apps valueForKey:@"displayName" forDisplayIdentifier:[listLauncherDisplayIdentifiers objectAtIndex:identifierIndex]] uppercaseString] hasPrefix:[alphabet objectAtIndex:i]]) {
 				NSInteger myInt = identifierIndex;
 				NSNumber *myNSNumber = [[NSNumber alloc] initWithInt:myInt];
 				[indexPositions replaceObjectAtIndex:i withObject:myNSNumber];

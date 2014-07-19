@@ -255,7 +255,8 @@ static NSMutableArray *indexPositions = nil;
 
 -(id)tableView:(id)arg1 viewForHeaderInSection:(int)arg2 {
 	SBSearchTableHeaderView *header = %orig;
-	if(favorites) {
+	if([self shouldDisplayListLauncher]){
+		if(favorites) {
 			if(listlauncher) {
 				if(arg2 == [self numberOfSectionsInTableView:arg1]-2)
 					[header setTitle:@"FAVORITES"];
@@ -263,8 +264,9 @@ static NSMutableArray *indexPositions = nil;
 				[header setTitle:@"FAVORITES"];
 			}
 		}
-	if(listlauncher) {
-		if(arg2 == [self numberOfSectionsInTableView:arg1]-1) [header setTitle:@"LISTLAUNCHER7"];
+		if(listlauncher) {
+			if(arg2 == [self numberOfSectionsInTableView:arg1]-1) [header setTitle:@"LISTLAUNCHER7"];
+		}
 	}
 	return header;
 }

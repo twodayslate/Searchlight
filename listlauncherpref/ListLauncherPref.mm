@@ -2,27 +2,43 @@
 //#include <Preferences/Preferences.h>
 #import <CoreFoundation/CoreFoundation.h>
 
-@interface PSViewController 
+@interface PSViewController : NSObject
 -(void)setPreferenceValue:(id)arg1 specifier:(id)arg2 ;
 @end
 
+@interface UIPreferencesTable
+@end
+
 @interface PSListController : PSViewController { 
-	NSArray* _specifiers; 
+	NSMutableArray* _specifiers; 
+	UIPreferencesTable* _table;
 }
 -(void)loadView;
 -(id)loadSpecifiersFromPlistName:(id)arg1 target:(id)arg2 ;
 -(void)reloadSpecifier:(id)arg1 ;
 -(id)specifierForID:(id)arg1 ;
+- (id)table;
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath; 
 @end
 
 @interface PSSpecifier
++ (id)preferenceSpecifierNamed:(id)arg1 target:(id)arg2 set:(id)arg3 get:(id)arg4 detail:(id)arg5 cell:(id)arg6 edit:(int)arg7;
+
 @end
 
 @interface PSTableCell : UITableViewCell
 -(id)initWithStyle:(int)arg1 reuseIdentifier:(id)arg2 specifier:(id)arg3 ;
++(id)cellTypeFromString:arg1;
 @end
 
-@interface ListLauncherPrefListController: PSListController {
+@interface PSEditableListController  : PSListController
+-(void)setEditingButtonHidden:(BOOL)arg1 animated:(BOOL)arg2 ;
+-(void)setEditButtonEnabled:(BOOL)arg1 ;
+-(id)_editButtonBarItem;
+- (id) tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section;
+@end
+
+@interface ListLauncherPrefListController: PSEditableListController <UITableViewDelegate, UITableViewDataSource> {
 }
 @end
 
@@ -30,36 +46,107 @@
 - (id)specifiers {
 	if(_specifiers == nil) {
 		_specifiers = [[self loadSpecifiersFromPlistName:@"ListLauncherPref" target:self] retain];
+		PSSpecifier* firstSpecifier = [PSSpecifier preferenceSpecifierNamed:@"Recent" target:self set:nil get:nil detail:nil cell:[PSTableCell cellTypeFromString:@"PSLinkCell"] edit:1];
+		PSSpecifier* secondSpecifier = [PSSpecifier preferenceSpecifierNamed:@"Favorites" target:self set:nil get:nil detail:nil cell:[PSTableCell cellTypeFromString:@"PSLinkCell"] edit:1];
+		PSSpecifier* thirdSpecifier = [PSSpecifier preferenceSpecifierNamed:@"Application List" target:self set:nil get:nil detail:nil cell:[PSTableCell cellTypeFromString:@"PSLinkCell"] edit:1];
+		[_specifiers insertObject:thirdSpecifier atIndex:1];
+		[_specifiers insertObject:secondSpecifier atIndex:1];
+		[_specifiers insertObject:firstSpecifier atIndex:1];
 	}
+
+	NSLog(@"_specifiers = %@",_specifiers);
 	return _specifiers;
-}
 
--(void)reset_brightness {
-	PSSpecifier *darknessSpecifier = [self specifierForID:@"ListLauncher_darkness"];
-	[self setPreferenceValue:@(80) specifier:darknessSpecifier];
-	[self reloadSpecifier:darknessSpecifier];
-	darknessSpecifier = [self specifierForID:@"ListLauncher_dark"];
-	[self setPreferenceValue:@(1) specifier:darknessSpecifier];
-	[self reloadSpecifier:darknessSpecifier];
-}
-
--(void)reset_alpha {
-	PSSpecifier *darknessSpecifier = [self specifierForID:@"ListLauncher_alpha"];
-	[self setPreferenceValue:@(100) specifier:darknessSpecifier];
-	[self reloadSpecifier:darknessSpecifier];
 }
 
 -(void)respring {
 	system("killall -9 SpringBoard");
 }
 
-
-//static NSString const *nsNotificationString = @"org.thebigboss.listlauncher7/saved";
-//static CFStringRef aCFString = CFStringCreateWithCString(NULL, [nsNotificationString UTF8String], NSUTF8StringEncoding);
 static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.listlauncher7/saved", kCFStringEncodingMacRoman);
-
 -(void)save {
 	CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), aCFString, NULL, NULL, YES);
+}
+
+- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath {
+	tableView.allowsSelectionDuringEditing = YES;	
+    if(indexPath.section == 0 || indexPath.section == 1) return YES;
+    return NO;
+}
+
+- (UITableViewCellEditingStyle) tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath {
+	return UITableViewCellEditingStyleNone;
+}
+
+- (BOOL) tableView:(UITableView *)tableView shouldIndentWhileEditingRowAtIndexPath:(NSIndexPath *)indexPath { 
+	return NO;
+}
+-(id)_editButtonBarItem { 
+	return nil;
+}
+
+- (NSIndexPath *)tableView:(UITableView *)tableView targetIndexPathForMoveFromRowAtIndexPath:(NSIndexPath *)sourceIndexPath toProposedIndexPath:(NSIndexPath *)proposedDestinationIndexPath {
+	if (proposedDestinationIndexPath.section > 1) {
+	    NSInteger row = 0;
+	    if (sourceIndexPath.section < proposedDestinationIndexPath.section) {
+	      row = [tableView numberOfRowsInSection:sourceIndexPath.section] - 1;
+	    }
+	    return [NSIndexPath indexPathForRow:row inSection:sourceIndexPath.section];     
+	  }
+
+  return proposedDestinationIndexPath;
+}
+// - (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)sourceIndexPath toIndexPath:(NSIndexPath *)destinationIndexPath 
+// {
+//     NSString *stringToMove = self.tableData[sourceIndexPath.row];
+//     [self.tableData removeObjectAtIndex:sourceIndexPath.row];
+//     [self.tableData insertObject:stringToMove atIndex:destinationIndexPath.row];
+// }
+
+
+-(void)tableView: (UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndex toIndexPath:(NSIndexPath *)toIndex {
+	NSLog(@"attempted to move");
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
+	NSLog(@"accessoryType = %d",(int)cell.accessoryType);
+	cell.editingAccessoryView = cell.accessoryView;
+	if(indexPath.section < 2 || indexPath.section > 3)
+		cell.editingAccessoryType = UITableViewCellAccessoryDisclosureIndicator;
+	tableView.allowsSelectionDuringEditing = YES; 
+	tableView.editing = YES;
+
+	[super setEditingButtonHidden:NO animated:NO];
+	[super setEditButtonEnabled:NO];
+
+	return cell;
+}
+- (NSInteger) numberOfSectionsInTableView:(UITableView *)tableView {
+	return 5;
+}
+- (NSInteger) tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+	if(section == 0) return 3;
+	if(section == 1) return 0; //count
+	if(section == 2) return 1; //count
+	if(section == 3) return 2; 
+	if(section == 4) return 1;
+	return 0; 
+}
+- (id) tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+	NSString *header = [super tableView:tableView titleForHeaderInSection:section];
+	return header;
+}
+
+-(void)github {
+	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://github.com/twodayslate"]];
+}
+-(void)paypal {
+	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=2R9WDZCE7CPZ8"]];
+}
+
+-(void)bitcoin {
+	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://coinbase.com/checkouts/59ead722b181591150e7de4ed6769cb4"]];
 }
 @end
 
@@ -133,6 +220,10 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 @end
 
 @implementation CreditCellClass
+// - (id)initWithSpecifier:(PSSpecifier *)specifier{
+//  	return [super initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:@"cell" specifier:specifier];
+// }
+
 - (instancetype)initWithStyle:(int)style reuseIdentifier:(NSString *)reuseIdentifier specifier:(PSSpecifier *)specifier {
 	self = [super initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:reuseIdentifier specifier:specifier];
 
@@ -177,4 +268,5 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 	[super dealloc];
 }
 @end
+
 // vim:ft=objc

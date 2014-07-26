@@ -4,7 +4,25 @@
 <dict>
 	<key>items</key>
 	<array>
+
 		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>INCLUDE</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>DO NOT INCLUDE</string>
+		</dict>
+
+
+
+
+<!-- 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
@@ -63,9 +81,9 @@
 			<string>whitelist-</string>
 			<key>ALSettingsPath</key>
 			<string>/var/mobile/Library/Preferences/org.thebigboss.listlauncher7.plist</string>
-		</dict>
+		</dict> -->
 
-		<dict>
+<!-- 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
@@ -126,7 +144,9 @@
 			<string>blacklist-</string>
 			<key>ALSettingsPath</key>
 			<string>/var/mobile/Library/Preferences/org.thebigboss.listlauncher7.plist</string>
-		</dict>
+		</dict> -->
+
+
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
@@ -139,7 +159,7 @@
             <key>cell</key>
             <string>PSButtonCell</string>
             <key>label</key>
-            <string>Save</string>
+            <string>Save/Refresh</string>
             <key>id</key>
             <string>save</string>
             <key>action</key>
@@ -147,6 +167,25 @@
             <key>PostNotification</key>
 			<string>org.thebigboss.listlauncher7/saved</string>
         </dict>
+
+        <dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Donate</string>
+		</dict>
+		<dict>
+			<key>cell</key>			<string>PSButtonCell</string>
+			<key>label</key>		<string>Bitcoin</string>
+			<key>icon</key> 	    <string>bitcoin.png</string>
+			<key>action</key>  		<string>bitcoin</string>
+		</dict>
+		<dict>
+			<key>cell</key>			<string>PSButtonCell</string>
+			<key>label</key>		<string>Paypal</string>
+			<key>icon</key> 	    <string>paypal.png</string>
+			<key>action</key>  		<string>paypal</string>
+		</dict>
 
         <dict>
 			<key>cell</key>
@@ -159,7 +198,7 @@
 			<key>isController</key>
 			<string>1</string>
 			<key>label</key>
-			<string>About</string>
+			<string>Advanced Options</string>
 			<key>icon</key>
 			<string>About.png</string>
 			<key>detail</key>

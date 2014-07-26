@@ -116,7 +116,8 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 		cell.editingAccessoryType = UITableViewCellAccessoryDisclosureIndicator;
 	tableView.allowsSelectionDuringEditing = YES; 
 	tableView.editing = YES;
-
+	if(indexPath.section == 2)
+		cell.textLabel.textAlignment = UITextAlignmentCenter;
 	[super setEditingButtonHidden:NO animated:NO];
 	[super setEditButtonEnabled:NO];
 

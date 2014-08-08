@@ -4,10 +4,11 @@ ARCHS = armv7 armv7s arm64
 include theos/makefiles/common.mk
 
 BUNDLE_NAME = ListLauncherPref
-ListLauncherPref_FILES = ListLauncherPref.mm AboutPref.mm
+ListLauncherPref_FILES = ListLauncherPref.mm AboutPref.mm LLFavoritesController.mm LLRecentController.mm LLApplicationController.mm
 ListLauncherPref_INSTALL_PATH = /Library/PreferenceBundles
 ListLauncherPref_FRAMEWORKS = UIKit
 ListLauncherPref_PRIVATE_FRAMEWORKS = Preferences
+ListLauncherPref_LIBRARIES = applist
 ListLauncherPref_ARCHS = armv7 arm64
 
 #export SYSROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS7.0.sdk

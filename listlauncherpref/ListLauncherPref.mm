@@ -1,62 +1,92 @@
-//#import <Preferences/PSListController.h>
-//#include <Preferences/Preferences.h>
-#import <CoreFoundation/CoreFoundation.h>
-
-@interface PSViewController : NSObject
--(void)setPreferenceValue:(id)arg1 specifier:(id)arg2 ;
-@end
-
-@interface UIPreferencesTable
-@end
-
-@interface PSListController : PSViewController { 
-	NSMutableArray* _specifiers; 
-	UIPreferencesTable* _table;
-}
--(void)loadView;
--(id)loadSpecifiersFromPlistName:(id)arg1 target:(id)arg2 ;
--(void)reloadSpecifier:(id)arg1 ;
--(id)specifierForID:(id)arg1 ;
-- (id)table;
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath; 
-@end
-
-@interface PSSpecifier
-+ (id)preferenceSpecifierNamed:(id)arg1 target:(id)arg2 set:(id)arg3 get:(id)arg4 detail:(id)arg5 cell:(id)arg6 edit:(int)arg7;
-
-@end
-
-@interface PSTableCell : UITableViewCell
--(id)initWithStyle:(int)arg1 reuseIdentifier:(id)arg2 specifier:(id)arg3 ;
-+(id)cellTypeFromString:arg1;
-@end
-
-@interface PSEditableListController  : PSListController
--(void)setEditingButtonHidden:(BOOL)arg1 animated:(BOOL)arg2 ;
--(void)setEditButtonEnabled:(BOOL)arg1 ;
--(id)_editButtonBarItem;
-- (id) tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section;
-@end
+#import "Preferences.h"
+#import "AboutPref.h"
+// #import "LLRecentController.h"
+// #import "LLFavoritesController.h"
+// #import "LLApplicationController.h"
 
 @interface ListLauncherPrefListController: PSEditableListController <UITableViewDelegate, UITableViewDataSource> {
+	NSMutableArray *enabledIdentifiers;
+	NSMutableArray *disabledIdentifiers;
+	NSArray *_sortedDisplayIdentifiers;
+	ALApplicationList *_applicationList;
 }
+@property (nonatomic, retain) ALApplicationList *applicationList;
+@property (nonatomic, retain) NSArray *sortedDisplayIdentifiers;
+-(void) generateAppList;
 @end
 
+static NSString *plistPath = @"/var/mobile/Library/Preferences/org.thebigboss.listlauncher7.plist";
+
 @implementation ListLauncherPrefListController
+
 - (id)specifiers {
 	if(_specifiers == nil) {
+
+		NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
+
+		if(!_sortedDisplayIdentifiers || !_applicationList) {
+			[self performSelectorInBackground:@selector(generateAppList) withObject:nil];
+		}
+
+		if(!settings) {
+			settings = [NSMutableDictionary dictionary];
+			[settings writeToFile:plistPath atomically:YES];
+		}
+		
+		enabledIdentifiers = [(NSMutableArray *) [settings valueForKey:@"enabledSections"] retain];
+		disabledIdentifiers = [(NSMutableArray *) [settings valueForKey:@"disabledSections"] retain];
+
+
+		if(settings == nil || !enabledIdentifiers || !disabledIdentifiers) {
+			NSLog(@"Setting up defaults");
+			//set defaults
+			enabledIdentifiers = [[[NSMutableArray alloc] init] retain];
+			disabledIdentifiers = [[@[@"Recent", @"Favorites", @"Application List"] mutableCopy] retain];
+			[settings setValue:enabledIdentifiers forKey:@"enabledSections"];
+			[settings setValue:disabledIdentifiers forKey:@"disabledSections"];
+			[settings writeToFile:plistPath atomically:YES];
+		}
+
 		_specifiers = [[self loadSpecifiersFromPlistName:@"ListLauncherPref" target:self] retain];
-		PSSpecifier* firstSpecifier = [PSSpecifier preferenceSpecifierNamed:@"Recent" target:self set:nil get:nil detail:nil cell:[PSTableCell cellTypeFromString:@"PSLinkCell"] edit:1];
-		PSSpecifier* secondSpecifier = [PSSpecifier preferenceSpecifierNamed:@"Favorites" target:self set:nil get:nil detail:nil cell:[PSTableCell cellTypeFromString:@"PSLinkCell"] edit:1];
-		PSSpecifier* thirdSpecifier = [PSSpecifier preferenceSpecifierNamed:@"Application List" target:self set:nil get:nil detail:nil cell:[PSTableCell cellTypeFromString:@"PSLinkCell"] edit:1];
-		[_specifiers insertObject:thirdSpecifier atIndex:1];
-		[_specifiers insertObject:secondSpecifier atIndex:1];
-		[_specifiers insertObject:firstSpecifier atIndex:1];
+
+		for(id spec in [[enabledIdentifiers reverseObjectEnumerator] allObjects]) {
+			NSString *classString = [@"LL" stringByAppendingString:[[[spec componentsSeparatedByString:@" "] objectAtIndex:0] stringByAppendingString:@"Controller"]];
+			NSLog(@"Class String = %@",classString);
+			PSSpecifier* firstSpecifier = [PSSpecifier preferenceSpecifierNamed:spec target:self set:nil get:nil detail:NSClassFromString(classString) cell:[PSTableCell cellTypeFromString:@"PSLinkCell"] edit:1];
+			[_specifiers insertObject:firstSpecifier atIndex:1];
+		}
+
+		for(id spec in [[disabledIdentifiers reverseObjectEnumerator] allObjects]) {
+			NSString *classString = [@"LL" stringByAppendingString:[[[spec componentsSeparatedByString:@" "] objectAtIndex:0] stringByAppendingString:@"Controller"]];
+			NSLog(@"Class String = %@",classString);
+			PSSpecifier* firstSpecifier = [PSSpecifier preferenceSpecifierNamed:spec target:self set:nil get:nil detail:NSClassFromString(classString) cell:[PSTableCell cellTypeFromString:@"PSLinkCell"] edit:1];
+			[_specifiers insertObject:firstSpecifier atIndex:2+[enabledIdentifiers count]];
+		}
+
+		NSLog(@"settings = %@",settings);
+
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(reloadTable:) name:@"reloadTable" object:nil];
+
+		
 	}
 
 	NSLog(@"_specifiers = %@",_specifiers);
+	
 	return _specifiers;
 
+}
+
+- (void)dealloc {
+	[disabledIdentifiers release];
+	[enabledIdentifiers release];
+	[super dealloc];
+}
+
+-(void)reloadTable:(NSNotification *)notification {
+	NSLog(@"Reloading table");
+	[self reload];
+	[self reloadSpecifiers];
+	[[self table] reloadData];
 }
 
 -(void)respring {
@@ -104,8 +134,41 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 // }
 
 
+-(int)inPathToIndex:(NSIndexPath *)index {
+	return 1; 
+}
+
 -(void)tableView: (UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndex toIndexPath:(NSIndexPath *)toIndex {
-	NSLog(@"attempted to move");
+	NSMutableDictionary *settings = [[[NSMutableDictionary alloc] initWithContentsOfFile:plistPath] retain];
+	NSString *title = [@"" retain];
+
+	NSLog(@"Before changes in settings = %@",settings);
+
+	if(fromIndex.section == 0) { // Enabled 
+		title = [enabledIdentifiers objectAtIndex:fromIndex.row];
+		[enabledIdentifiers removeObjectAtIndex:fromIndex.row];
+		[settings setValue:enabledIdentifiers forKey:@"enabledSections"];
+	} else {
+		title = [disabledIdentifiers objectAtIndex:fromIndex.row];
+		[disabledIdentifiers removeObjectAtIndex:fromIndex.row];
+		[settings setValue:disabledIdentifiers forKey:@"disabledSections"];
+	}
+
+	NSLog(@"Moving title = %@",title);
+
+	if(toIndex.section == 0) { // Enabled 
+		[enabledIdentifiers insertObject:title atIndex:toIndex.row];
+		[settings setValue:enabledIdentifiers forKey:@"enabledSections"];
+	} else { // disabled
+		[disabledIdentifiers insertObject:title atIndex:toIndex.row];
+		[settings setValue:disabledIdentifiers forKey:@"disabledSections"];
+	}
+
+	[settings writeToFile:plistPath atomically:YES];
+	NSLog(@"After changes in settings = %@",settings);
+	
+	[title release];
+	tableView.allowsSelectionDuringEditing = YES; 
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -116,8 +179,6 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 		cell.editingAccessoryType = UITableViewCellAccessoryDisclosureIndicator;
 	tableView.allowsSelectionDuringEditing = YES; 
 	tableView.editing = YES;
-	if(indexPath.section == 2)
-		cell.textLabel.textAlignment = UITextAlignmentCenter;
 	[super setEditingButtonHidden:NO animated:NO];
 	[super setEditButtonEnabled:NO];
 
@@ -127,13 +188,44 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 	return 5;
 }
 - (NSInteger) tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-	if(section == 0) return 3;
-	if(section == 1) return 0; //count
-	if(section == 2) return 1; //count
+	if(section == 0) return [enabledIdentifiers count]; //count
+	if(section == 1) return [disabledIdentifiers count]; //count
+	if(section == 2) return 1;
 	if(section == 3) return 2; 
 	if(section == 4) return 1;
 	return 0; 
 }
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+	tableView.allowsSelectionDuringEditing = YES; 
+	NSLog(@"attempting to select (%d,%d)",(int)indexPath.section,(int)indexPath.row);
+
+	if(indexPath.section == 0) { // enabled 
+		NSString *spec = [enabledIdentifiers objectAtIndex:indexPath.row];
+		NSString *classString = [@"LL" stringByAppendingString:[[[spec componentsSeparatedByString:@" "] objectAtIndex:0] stringByAppendingString:@"Controller"]];
+		LLFavoritesAddController *_controller = [[NSClassFromString(classString) alloc] init];
+		_controller.sortedDisplayIdentifiers = [self sortedDisplayIdentifiers];
+		_controller.applicationList = [self applicationList];
+		if (_controller) {
+			[self.navigationController pushViewController:_controller animated:YES];
+		}
+	} else if(indexPath.section == 1) { // disabled
+		NSString *spec = [disabledIdentifiers objectAtIndex:indexPath.row];
+		NSString *classString = [@"LL" stringByAppendingString:[[[spec componentsSeparatedByString:@" "] objectAtIndex:0] stringByAppendingString:@"Controller"]];
+		LLFavoritesAddController *_controller = [[NSClassFromString(classString) alloc] init];
+		_controller.sortedDisplayIdentifiers = [self sortedDisplayIdentifiers];
+		_controller.applicationList = [self applicationList];
+		if (_controller) {
+			[self.navigationController pushViewController:_controller animated:YES];
+		}
+	} else { 
+		[super tableView:tableView didSelectRowAtIndexPath:indexPath];
+	}
+}
+- (NSIndexPath *)tableView:(UITableView *)tableView willSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    return indexPath;
+}
+
 - (id) tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
 	NSString *header = [super tableView:tableView titleForHeaderInSection:section];
 	return header;
@@ -149,125 +241,35 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 -(void)bitcoin {
 	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://coinbase.com/checkouts/59ead722b181591150e7de4ed6769cb4"]];
 }
-@end
 
-@interface AboutListLauncherController : PSListController
-@end
+-(void)generateAppList {
+	Class var = NSClassFromString(@"SBSearchViewController");
 
-@implementation AboutListLauncherController
+	SBSearchViewController *vcont = [var sharedInstance];
+	NSLog(@"SBSearchViewController = %@",vcont);
+	NSLog(@"applicationList = %@",[vcont applicationList]);
 
-- (NSArray *)specifiers {
-	if (!_specifiers) {
-		//NSString *compatibleName = MODERN_IOS ? @"AboutPrefs" : @"AboutPrefs";
-		NSString *compatibleName = @"AboutPref";
-		_specifiers = [[self loadSpecifiersFromPlistName:compatibleName target:self] retain];
-	}
+	_applicationList = [vcont applicationList] ?: [[ALApplicationList sharedApplicationList] retain];
 
-	return _specifiers;
-}
 
-- (void)loadView {
-	[super loadView];
-
-	// if (![[CRPrefsManager sharedManager] objectForKey:@"signalStyle"]) {
-	// 	PSSpecifier *signalStyleSpecifier = [self specifierForID:@"SignalStyle"];
-	// 	[self setPreferenceValue:@(1) specifier:signalStyleSpecifier];
-	// 	[self reloadSpecifier:signalStyleSpecifier];
-	// }
-}
-
-- (void)twitter { 
-	if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tweetbot:"]]) {
-		[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"tweetbot:///user_profile/twodayslate"]];
-	}
-
-	else if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"twitterrific:"]]) {
-		[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"twitterrific:///profile?screen_name=twodayslate"]];
-	}
-
-	else if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tweetings:"]]) {
-		[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"tweetings:///user?screen_name=twodayslate"]];
-	}
-
-	else if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"twitter:"]]) {
-		[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"twitter://user?screen_name=twodayslate"]];
-	}
-
-	else {
-		[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://mobile.twitter.com/twodayslate"]];
-	}
-}
-
--(void)website {
-	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"http://zac.gorak.us"]];
-}
-
--(void)github {
-	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"http://zac.gorak.us"]];
-}
-
--(void)paypal {
-	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=2R9WDZCE7CPZ8"]];
-}
-
--(void)bitcoin {
-	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://coinbase.com/checkouts/59ead722b181591150e7de4ed6769cb4"]];
-}
-@end
-
-@interface CreditCellClass : PSTableCell <UITextViewDelegate> { 
-	UITextView *_plainTextView;
-}
-@end
-
-@implementation CreditCellClass
-// - (id)initWithSpecifier:(PSSpecifier *)specifier{
-//  	return [super initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:@"cell" specifier:specifier];
-// }
-
-- (instancetype)initWithStyle:(int)style reuseIdentifier:(NSString *)reuseIdentifier specifier:(PSSpecifier *)specifier {
-	self = [super initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:reuseIdentifier specifier:specifier];
-
-	if (self) {
-		NSString *rawCredits = @"ListLauncher7 was created by @twodayslate. Original version (>iOS5) was created by Grant Paul (@chpwn). Developed with permission.  Uses AppList by Ryan Petrich (@rpetrich). Enjoy!";
-
-		CGFloat padding = 5.0, savedHeight = 100.0;
-
-		 _plainTextView = [[UITextView alloc] initWithFrame:CGRectMake(padding, 0.0, self.frame.size.width - (padding * 2.0), savedHeight)];
-		self.clipsToBounds = _plainTextView.clipsToBounds = NO;
-		_plainTextView.backgroundColor = [UIColor clearColor];
-		_plainTextView.userInteractionEnabled = YES;
-		_plainTextView.scrollEnabled = NO;
-		_plainTextView.editable = NO;
-		 _plainTextView.delegate = self;
-		 
+	NSLog(@"before sort = %@",[_applicationList.applications allKeys]);
+	NSLog(@"sortedDisplayIdentifiers = %@",[vcont sortedDisplayIdentifiers]);
+	_sortedDisplayIdentifiers =  [vcont sortedDisplayIdentifiers] ?: [[[NSMutableDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/org.thebigboss.listlauncher7.applist.plist"] valueForKey:@"applications"] ?: [[[_applicationList.applications allKeys] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+	    return [[_applicationList.applications objectForKey:obj1] caseInsensitiveCompare:[_applicationList.applications objectForKey:obj2]];}] retain];
 	
-		NSMutableAttributedString *clickable = [[[NSMutableAttributedString alloc] initWithString:rawCredits attributes:@{ NSFontAttributeName : [UIFont systemFontOfSize:[UIFont smallSystemFontSize]]}] autorelease];
-
-			[clickable setAttributes:@{ NSLinkAttributeName : [NSURL URLWithString:@"http://zac.gorak.us/"]} range:[clickable.string rangeOfString:@"@twodayslate"]];
-			[clickable setAttributes:@{ NSLinkAttributeName : [NSURL URLWithString:@"http://chpwn.com/"]} range:[clickable.string rangeOfString:@"Grant Paul (@chpwn)"]];
-			[clickable setAttributes:@{ NSLinkAttributeName : [NSURL URLWithString:@"http://rpetri.ch/"]} range:[clickable.string rangeOfString:@"Ryan Petrich (@rpetrich)"]];
-			_plainTextView.linkTextAttributes = @{ NSForegroundColorAttributeName : [UIColor colorWithRed:68/255.0 green:132/255.0 blue:231/255.0 alpha:1.0] };
-
-		_plainTextView.dataDetectorTypes = UIDataDetectorTypeLink;
-		_plainTextView.attributedText = clickable;
-		[_plainTextView setFont:[UIFont systemFontOfSize:14]];
-		[self addSubview:_plainTextView];
-	}
-
-	return self;
+	NSLog(@"after sort = %@",_sortedDisplayIdentifiers);
+	NSLog(@"DONE GENERATING APPLIST");
 }
 
-- (BOOL)textView:(UITextView *)textView shouldInteractWithURL:(NSURL *)URL inRange:(NSRange)characterRange {
-	return YES;
+-(ALApplicationList *)applicationList {
+	if(!_applicationList) [self generateAppList];
+	return _applicationList;
+}
+-(NSArray *)sortedDisplayIdentifiers {
+	if(!_sortedDisplayIdentifiers) [self generateAppList];
+	return _sortedDisplayIdentifiers;
 }
 
-- (void)dealloc {
-	_plainTextView = nil;
-	[_plainTextView release];
-
-	[super dealloc];
-}
 @end
 
 // vim:ft=objc

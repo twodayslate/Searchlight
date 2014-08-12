@@ -17,33 +17,34 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 
 		PSSpecifier* firstSpecifier = [PSSpecifier preferenceSpecifierNamed:@"Enabled" target:self set:@selector(setValue:forSpecifier:) get:@selector(getValueForSpecifier:) detail:nil cell:[PSTableCell cellTypeFromString:@"PSSwitchCell"] edit:1];
 		[_specifiers insertObject:firstSpecifier atIndex:0];
-		[firstSpecifier release];
+		//[firstSpecifier release];
 		
 		
-		favoriteList = [(NSMutableArray *) [settings valueForKey:@"favorites"] retain];
+		_favoriteList = (NSMutableArray *) [settings valueForKey:@"favorites"];
 		
-		if(!favoriteList) {
-			favoriteList = [[[NSMutableArray alloc] init] retain];
+		if(!_favoriteList) {
+			_favoriteList = [[NSMutableArray alloc] init];
 			
-			[settings setValue:favoriteList forKey:@"favorites"];
+			[settings setValue:_favoriteList forKey:@"favorites"];
 			[settings writeToFile:plistPath atomically:YES];
 		}
 
-		favoriteList =  [[[favoriteList sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
-	    return 	[[favoriteList objectAtIndex:[favoriteList indexOfObject:obj1]] objectAtIndex:1] > [[favoriteList objectAtIndex:[favoriteList indexOfObject:obj2]] objectAtIndex:1]	;}] mutableCopy] retain];
+		_favoriteList =  [[_favoriteList sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+	    return 	[[_favoriteList objectAtIndex:[_favoriteList indexOfObject:obj1]] objectAtIndex:1] > [[_favoriteList objectAtIndex:[_favoriteList indexOfObject:obj2]] objectAtIndex:1]	;}] mutableCopy];
 	
 
 		
-		NSLog(@"favoriteList = %@",favoriteList);
+		//NSLog(@"favoriteList = %@",favoriteList);
 		int count = 0;
-		for(int i = 0; i < [favoriteList count]; i++) {
-			id spec = [favoriteList objectAtIndex:i];
-			int index = [favoriteList indexOfObject:spec];
-			[favoriteList removeObjectAtIndex:index];
-			[favoriteList insertObject:@[ [spec objectAtIndex:0],[[NSNumber alloc] initWithInt:count] ] atIndex:index];
+		for(int i = 0; i < [_favoriteList count]; i++) {
+			id spec = [_favoriteList objectAtIndex:i];
+			int index = [_favoriteList indexOfObject:spec];
+			[_favoriteList removeObjectAtIndex:index];
+			[_favoriteList insertObject:@[ [spec objectAtIndex:0],[[NSNumber alloc] initWithInt:count] ] atIndex:index];
 			PSSpecifier* appSpecifier = [PSSpecifier preferenceSpecifierNamed:[_applicationList valueForKey:@"displayName" forDisplayIdentifier:[spec objectAtIndex:0]] target:self set:nil get:nil detail:nil cell:[PSTableCell cellTypeFromString:@"PSTitleCell"] edit:1];
 			[appSpecifier setIdentifier:[spec objectAtIndex:0]];
 			[_specifiers insertObject:appSpecifier atIndex:[_specifiers count]];
+			//[appSpecifier release];
 			count++;
 		}
 
@@ -56,10 +57,22 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 			[addButton release];
 		}
 
+		//[settings release];
+
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(reloadFavoritesTable:) name:@"reloadFavoritesTable" object:nil];
 	}
 
+	
+
+	NSLog(@"done with specifiers");
+
 	return _specifiers;
+}
+- (void)dealloc {	
+	[_favoriteList release];
+	[_applicationList release];
+	[_sortedDisplayIdentifiers release];
+	[super dealloc];
 }
 
 -(void)addButtonPressed:(id)arg1 {
@@ -69,22 +82,25 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 		if (_controller) {
 			[self.navigationController pushViewController:_controller animated:YES];
 		}
+	//[_controller release];
 }
 
 - (id)getValueForSpecifier:(PSSpecifier*)specifier {
-	NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
-	if([(NSMutableArray *) [settings valueForKey:@"enabledSections"] containsObject:name]) {
-		return @YES;
-	} 
+	@autoreleasepool {
+		NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
+		if([(NSMutableArray *) [settings valueForKey:@"enabledSections"] containsObject:name]) {
+			return @YES;
+		} 
 
-	return @NO;
+		return @NO;
+	}
 }
 
 - (void)setValue:(id)value forSpecifier:(PSSpecifier *)specifier {
 	NSLog(@"value = %@",value);
-	NSMutableDictionary *settings = [[[NSMutableDictionary alloc] initWithContentsOfFile:plistPath] retain];
-	NSMutableArray *enabledIdentifiers = [(NSMutableArray *) [settings valueForKey:@"enabledSections"] retain];
-	NSMutableArray *disabledIdentifiers = [(NSMutableArray *) [settings valueForKey:@"disabledSections"] retain];
+	NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
+	NSMutableArray *enabledIdentifiers = (NSMutableArray *) [settings valueForKey:@"enabledSections"];
+	NSMutableArray *disabledIdentifiers = (NSMutableArray *) [settings valueForKey:@"disabledSections"];
 
 	if([value boolValue]) { //set to enable
 		[enabledIdentifiers insertObject:name atIndex:0];
@@ -94,8 +110,9 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 		[enabledIdentifiers removeObject:name];
 	}
 	[settings writeToFile:plistPath atomically:YES];
-	[enabledIdentifiers release];
-	[disabledIdentifiers release];
+	//[enabledIdentifiers release];
+	//[disabledIdentifiers release];
+	//[settings release];
 	NSLog(@"settings = %@",settings);
 
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"reloadTable" object:self userInfo:nil];
@@ -107,16 +124,16 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 	//[self reload];
 	if(self) {
 		[self flushSettings];
-		_specifiers = nil;
-		[self specifiers];
+		[self reloadSpecifiers];
 		//[[self table] reloadData];
 	}
 	//[[self table] reloadData];
 }
 
 -(void)flushSettings {
-	NSMutableDictionary *settings = [[[NSMutableDictionary alloc] initWithContentsOfFile:plistPath] retain];
-	favoriteList = [(NSMutableArray *) [settings valueForKey:@"favorites"] retain];
+	NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
+	_favoriteList = (NSMutableArray *) [settings valueForKey:@"favorites"];
+	//[settings release];
 }
 
 
@@ -138,7 +155,7 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 				initWithBarButtonSystemItem:UIBarButtonSystemItemAdd
 	    		target:self action:@selector(addButtonPressed:)];
 			self.navigationItem.rightBarButtonItem = addButton;
-	return addButton;
+	return [addButton autorelease];
 }
 
 - (NSIndexPath *)tableView:(UITableView *)tableView targetIndexPathForMoveFromRowAtIndexPath:(NSIndexPath *)sourceIndexPath toProposedIndexPath:(NSIndexPath *)proposedDestinationIndexPath {
@@ -154,36 +171,40 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 }
 
 -(void)tableView: (UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndex toIndexPath:(NSIndexPath *)toIndex {
-	NSMutableDictionary *settings = [[[NSMutableDictionary alloc] initWithContentsOfFile:plistPath] retain];
+	NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
 	[settings writeToFile:plistPath atomically:YES];
 	NSLog(@"inside moveRow message");
-	NSString *name = [[favoriteList objectAtIndex:fromIndex.row] retain];
-	[favoriteList removeObjectAtIndex:fromIndex.row];
-	[favoriteList insertObject:name atIndex:toIndex.row];
+	NSString *name = [_favoriteList objectAtIndex:fromIndex.row];
+	[_favoriteList removeObjectAtIndex:fromIndex.row];
+	[_favoriteList insertObject:name atIndex:toIndex.row];
 
 	int count = 0;
-		for(int i = 0; i < [favoriteList count]; i++) {
-			id spec = [[favoriteList objectAtIndex:i] retain];
-			int index = [favoriteList indexOfObject:spec];
-			[favoriteList removeObjectAtIndex:index];
-			[favoriteList insertObject:@[ [spec objectAtIndex:0],[[NSNumber alloc] initWithInt:count] ] atIndex:index];
+		for(int i = 0; i < [_favoriteList count]; i++) {
+			id spec = [[_favoriteList objectAtIndex:i] retain];
+			int index = [_favoriteList indexOfObject:spec];
+			[_favoriteList removeObjectAtIndex:index];
+			[_favoriteList insertObject:@[ [spec objectAtIndex:0],[[NSNumber alloc] initWithInt:count] ] atIndex:index];
 			count++;
 		}
 
-	[settings setValue:favoriteList forKey:@"favorites"];
+	[settings setValue:_favoriteList forKey:@"favorites"];
 	NSLog(@"After changes in settings = %@",settings);
 	[settings writeToFile:plistPath atomically:YES];
-	[name release];
+	//[name release];
 	tableView.allowsSelectionDuringEditing = YES; 
 	tableView.editing = YES;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
+	if (cell == nil) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
+                                  reuseIdentifier:@"CellIdentifier@"];
+    }
 	NSLog(@"indexPath = (%d,%d)",(int)indexPath.row,(int)indexPath.section);
 	if(indexPath.section == 2) {
 		NSLog(@"accessoryType = %d",(int)cell.accessoryType);
-		UIImage *icon = [_applicationList iconOfSize:59 forDisplayIdentifier:[[favoriteList objectAtIndex:indexPath.row] objectAtIndex:0]];
+		UIImage *icon = [_applicationList iconOfSize:59 forDisplayIdentifier:[[_favoriteList objectAtIndex:indexPath.row] objectAtIndex:0]];
 		cell.imageView.image = icon;
 	} else {
 		cell.editingAccessoryView = cell.accessoryView;
@@ -193,6 +214,7 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 
 	return cell;
 }
+
 - (NSInteger) numberOfSectionsInTableView:(UITableView *)tableView {
 	return 3;
 }
@@ -200,8 +222,8 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 	if(section == 0) return  1;
 	if(section == 1) return 1;
 	if(section == 2) {
-		NSLog(@"favoriteList = %@",favoriteList);
-		return [favoriteList count]; //count
+		NSLog(@"favoriteList = %@",_favoriteList);
+		return [_favoriteList count]; //count
 	}
 	return 0; 
 }
@@ -234,7 +256,10 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
-
+	if (cell == nil) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
+                                  reuseIdentifier:@"CellIdentifier@"];
+    }
 	cell.accessoryType = UITableViewCellAccessoryCheckmark;
 	UIImage *icon = [_applicationList iconOfSize:59 forDisplayIdentifier:[_sortedDisplayIdentifiers objectAtIndex:indexPath.row]];
 	cell.imageView.image = icon;
@@ -247,18 +272,17 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 	NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
 	NSLog(@"specifier = %@",specifier);
 	NSLog(@"specifier id = %@",[specifier identifier]);
-	NSMutableArray *favoriteList = [(NSMutableArray *) [settings valueForKey:@"favorites"] retain];
+	NSMutableArray *favoriteList = (NSMutableArray *) [settings valueForKey:@"favorites"];
 	for(id spec in favoriteList) {
 		if([[spec objectAtIndex:0] isEqual:[specifier identifier]]) return @YES;
 	}
-	[favoriteList release];
 	return @NO;
 }
 
 - (void)setValue:(id)value forSpecifier:(PSSpecifier *)specifier {
 	NSLog(@"value = %@",value);
-	NSMutableDictionary *settings = [[[NSMutableDictionary alloc] initWithContentsOfFile:plistPath] retain];
-	NSMutableArray *favoriteList = [(NSMutableArray *) [settings valueForKey:@"favorites"] retain];
+	NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
+	NSMutableArray *favoriteList = (NSMutableArray *) [settings valueForKey:@"favorites"];
 
 	if([value boolValue]) {
 		[favoriteList addObject:@[[specifier identifier],[[NSNumber alloc] initWithInt:[favoriteList count]]]];
@@ -275,24 +299,7 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 	[settings writeToFile:plistPath atomically:YES];
 
 	NSLog(@"settings = %@",settings);
-	[favoriteList release];
-
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"reloadFavoritesTable" object:self userInfo:nil];
 
-}
-@end
-
-
-@interface SRSwitchTableCell : PSSwitchTableCell //our class
-@end
- 
-@implementation SRSwitchTableCell
- 
--(id)initWithStyle:(int)arg1 reuseIdentifier:(id)arg2 specifier:(id)arg3 { //init method
-	self = [super initWithStyle:arg1 reuseIdentifier:arg2 specifier:arg3]; //call the super init method
-	if (self) {
-		[((UISwitch *)[self control]) setOn:NO animated:NO];
-	}
-	return self;
 }
 @end

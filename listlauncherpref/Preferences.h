@@ -63,10 +63,11 @@
 @end
 
 @interface LLFavoritesController : PSEditableListController <UITableViewDelegate, UITableViewDataSource> {
-	NSMutableArray *favoriteList;
+	NSMutableArray *_favoriteList;
 	NSArray *_sortedDisplayIdentifiers;
 	ALApplicationList *_applicationList;
 }
+@property (nonatomic, retain) NSMutableArray *favoriteList;
 @property (nonatomic, retain) ALApplicationList *applicationList;
 @property (nonatomic, retain) NSArray *sortedDisplayIdentifiers;
 @end

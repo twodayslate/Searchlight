@@ -51,14 +51,12 @@ static NSString *plistPath = @"/var/mobile/Library/Preferences/org.thebigboss.li
 
 		for(id spec in [[enabledIdentifiers reverseObjectEnumerator] allObjects]) {
 			NSString *classString = [@"LL" stringByAppendingString:[[[spec componentsSeparatedByString:@" "] objectAtIndex:0] stringByAppendingString:@"Controller"]];
-			NSLog(@"Class String = %@",classString);
 			PSSpecifier* firstSpecifier = [PSSpecifier preferenceSpecifierNamed:spec target:self set:nil get:nil detail:NSClassFromString(classString) cell:[PSTableCell cellTypeFromString:@"PSLinkCell"] edit:1];
 			[_specifiers insertObject:firstSpecifier atIndex:1];
 		}
 
 		for(id spec in [[disabledIdentifiers reverseObjectEnumerator] allObjects]) {
 			NSString *classString = [@"LL" stringByAppendingString:[[[spec componentsSeparatedByString:@" "] objectAtIndex:0] stringByAppendingString:@"Controller"]];
-			NSLog(@"Class String = %@",classString);
 			PSSpecifier* firstSpecifier = [PSSpecifier preferenceSpecifierNamed:spec target:self set:nil get:nil detail:NSClassFromString(classString) cell:[PSTableCell cellTypeFromString:@"PSLinkCell"] edit:1];
 			[_specifiers insertObject:firstSpecifier atIndex:2+[enabledIdentifiers count]];
 		}
@@ -142,8 +140,6 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 	NSMutableDictionary *settings = [[[NSMutableDictionary alloc] initWithContentsOfFile:plistPath] retain];
 	NSString *title = [@"" retain];
 
-	NSLog(@"Before changes in settings = %@",settings);
-
 	if(fromIndex.section == 0) { // Enabled 
 		title = [enabledIdentifiers objectAtIndex:fromIndex.row];
 		[enabledIdentifiers removeObjectAtIndex:fromIndex.row];
@@ -154,8 +150,6 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 		[settings setValue:disabledIdentifiers forKey:@"disabledSections"];
 	}
 
-	NSLog(@"Moving title = %@",title);
-
 	if(toIndex.section == 0) { // Enabled 
 		[enabledIdentifiers insertObject:title atIndex:toIndex.row];
 		[settings setValue:enabledIdentifiers forKey:@"enabledSections"];
@@ -165,15 +159,13 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 	}
 
 	[settings writeToFile:plistPath atomically:YES];
-	NSLog(@"After changes in settings = %@",settings);
-	
+
 	[title release];
 	tableView.allowsSelectionDuringEditing = YES; 
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
-	NSLog(@"accessoryType = %d",(int)cell.accessoryType);
 	cell.editingAccessoryView = cell.accessoryView;
 	if(indexPath.section < 2 || indexPath.section > 3)
 		cell.editingAccessoryType = UITableViewCellAccessoryDisclosureIndicator;
@@ -198,7 +190,6 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
 	tableView.allowsSelectionDuringEditing = YES; 
-	NSLog(@"attempting to select (%d,%d)",(int)indexPath.section,(int)indexPath.row);
 
 	if(indexPath.section == 0) { // enabled 
 		NSString *spec = [enabledIdentifiers objectAtIndex:indexPath.row];
@@ -243,28 +234,27 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 }
 
 -(void)generateAppList {
-	Class var = NSClassFromString(@"SBSearchViewController");
+	NSString *plistPath = @"/var/mobile/Library/Preferences/org.thebigboss.listlauncher7.applist.plist";
+	NSMutableDictionary *appsettings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
+	if(!appsettings) {
+			appsettings = [NSMutableDictionary dictionary];
+			[appsettings writeToFile:plistPath atomically:YES];
+	}
+	_applicationList = [[ALApplicationList sharedApplicationList] retain];
 
-	SBSearchViewController *vcont = [var sharedInstance];
-	NSLog(@"SBSearchViewController = %@",vcont);
-	NSLog(@"applicationList = %@",[vcont applicationList]);
-
-	_applicationList = [vcont applicationList] ?: [[ALApplicationList sharedApplicationList] retain];
-
-
-	NSLog(@"before sort = %@",[_applicationList.applications allKeys]);
-	NSLog(@"sortedDisplayIdentifiers = %@",[vcont sortedDisplayIdentifiers]);
-	_sortedDisplayIdentifiers =  [vcont sortedDisplayIdentifiers] ?: [[[NSMutableDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/org.thebigboss.listlauncher7.applist.plist"] valueForKey:@"applications"] ?: [[[_applicationList.applications allKeys] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+	_sortedDisplayIdentifiers =  [[[NSMutableDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/org.thebigboss.listlauncher7.applist.plist"] valueForKey:@"applications"] ?: [[[_applicationList.applications allKeys] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
 	    return [[_applicationList.applications objectForKey:obj1] caseInsensitiveCompare:[_applicationList.applications objectForKey:obj2]];}] retain];
-	
-	NSLog(@"after sort = %@",_sortedDisplayIdentifiers);
-	NSLog(@"DONE GENERATING APPLIST");
+	[appsettings setValue:_sortedDisplayIdentifiers forKey:@"applications"];
+	[appsettings writeToFile:plistPath atomically:YES];
 }
 
 -(ALApplicationList *)applicationList {
-	if(!_applicationList) [self generateAppList];
+	if(!_applicationList) {
+		[self generateAppList];
+	}
 	return _applicationList;
 }
+
 -(NSArray *)sortedDisplayIdentifiers {
 	if(!_sortedDisplayIdentifiers) [self generateAppList];
 	return _sortedDisplayIdentifiers;

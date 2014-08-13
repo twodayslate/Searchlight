@@ -175,9 +175,21 @@
 			<string>Donate</string>
 		</dict>
 		<dict>
+			<key>cell</key>
+			<string>PSLinkCell</string>
+			<key>isController</key>
+			<string>1</string>
+			<key>label</key>
+			<string>About the Author</string>
+			<key>icon</key>
+			<string>Person.png</string>
+			<key>detail</key>
+			<string>LLAboutController</string> <!-- AboutController brings up teh standard about page -->
+		</dict>
+		<dict>
 			<key>cell</key>			<string>PSButtonCell</string>
 			<key>label</key>		<string>Bitcoin</string>
-			<key>icon</key> 	    <string>bitcoin.png</string>
+			<key>icon</key> 	    <string>Bitcoin.png</string>
 			<key>action</key>  		<string>bitcoin</string>
 		</dict>
 		<dict>
@@ -200,9 +212,9 @@
 			<key>label</key>
 			<string>Advanced Options</string>
 			<key>icon</key>
-			<string>About.png</string>
+			<string>Gear.png</string>
 			<key>detail</key>
-			<string>AboutListLauncherController</string> <!-- AboutController brings up teh standard about page -->
+			<string>LLAdvancedController</string> <!-- AboutController brings up teh standard about page -->
 		</dict>
 
 	</array>

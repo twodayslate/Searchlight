@@ -19,10 +19,23 @@
 		</dict>
 		<dict>
 			<key>cell</key>			<string>PSButtonCell</string>
+			<key>label</key>		<string>blurSL</string>
+			<key>icon</key> 	    <string>blurSL.png</string>
+			<key>action</key>  		<string>blursl</string>
+		</dict>
+		<dict>
+			<key>cell</key>			<string>PSButtonCell</string>
+			<key>label</key>		<string>SLgestures</string>
+			<key>icon</key> 	    <string>slgestures.png</string>
+			<key>action</key>  		<string>slgestures</string>
+		</dict>
+		<dict>
+			<key>cell</key>			<string>PSButtonCell</string>
 			<key>label</key>		<string>More...</string>
 			<key>icon</key> 	    <string>more.png</string>
 			<key>action</key>  		<string>more</string>
 		</dict>
+		
 		
 		<dict>
 			<key>cell</key>
@@ -39,6 +52,12 @@
 			<key>label</key>		<string>SearchLoader</string>
 			<key>icon</key> 	    <string>searchloader.png</string>
 			<key>action</key>  		<string>searchloader</string>
+		</dict>
+		<dict>
+			<key>cell</key>			<string>PSButtonCell</string>
+			<key>label</key>		<string>Smart Search</string>
+			<key>icon</key> 	    <string>smartsearch.png</string>
+			<key>action</key>  		<string>smartsearchr</string>
 		</dict>
 		<dict>
 			<key>cell</key>			<string>PSButtonCell</string>

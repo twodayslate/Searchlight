@@ -9,27 +9,6 @@
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
-			<string>Logging</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<false/>
-			<key>defaults</key>
-			<string>org.thebigboss.listlauncher7</string>
-			<key>key</key>
-			<string>logging_enabled</string>
-			<key>label</key>
-			<string>Enabled</string>
-			<key>PostNotification</key>
-			<string>org.thebigboss.listlauncher7/settingschanged</string>
-		</dict>
-
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>label</key>
 			<string>The tweak</string>
 			<key>footerText</key>
 			<string>Thanks for using ListLauncher7! Please send all feedback and support directly from Cydia.</string>
@@ -104,7 +83,7 @@
 			<key>icon</key>
 			<string>more.png</string>
 			<key>detail</key>
-			<string>MoreTweaksController</string> <!-- AboutController brings up teh standard about page -->
+			<string>LLTweakListController</string> <!-- AboutController brings up teh standard about page -->
 		</dict>
 	</array>
 	<key>title</key>

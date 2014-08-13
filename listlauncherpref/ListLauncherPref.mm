@@ -1,17 +1,18 @@
 #import "Preferences.h"
-#import "AboutPref.h"
 // #import "LLRecentController.h"
 // #import "LLFavoritesController.h"
 // #import "LLApplicationController.h"
 
 @interface ListLauncherPrefListController: PSEditableListController <UITableViewDelegate, UITableViewDataSource> {
-	NSMutableArray *enabledIdentifiers;
-	NSMutableArray *disabledIdentifiers;
+	NSMutableArray *_enabledIdentifiers;
+	NSMutableArray *_disabledIdentifiers;
 	NSArray *_sortedDisplayIdentifiers;
 	ALApplicationList *_applicationList;
 }
 @property (nonatomic, retain) ALApplicationList *applicationList;
 @property (nonatomic, retain) NSArray *sortedDisplayIdentifiers;
+@property (nonatomic, retain) NSArray *enabledIdentifiers;
+@property (nonatomic, retain) NSArray *disabledIdentifiers;
 -(void) generateAppList;
 @end
 
@@ -33,32 +34,41 @@ static NSString *plistPath = @"/var/mobile/Library/Preferences/org.thebigboss.li
 			[settings writeToFile:plistPath atomically:YES];
 		}
 		
-		enabledIdentifiers = [(NSMutableArray *) [settings valueForKey:@"enabledSections"] retain];
-		disabledIdentifiers = [(NSMutableArray *) [settings valueForKey:@"disabledSections"] retain];
+		_enabledIdentifiers = [(NSMutableArray *) [settings valueForKey:@"enabledSections"] retain];
+		_disabledIdentifiers = [(NSMutableArray *) [settings valueForKey:@"disabledSections"] retain];
 
 
-		if(settings == nil || !enabledIdentifiers || !disabledIdentifiers) {
+		if(settings == nil || !_enabledIdentifiers || !_disabledIdentifiers) {
 			NSLog(@"Setting up defaults");
 			//set defaults
-			enabledIdentifiers = [[[NSMutableArray alloc] init] retain];
-			disabledIdentifiers = [[@[@"Recent", @"Favorites", @"Application List"] mutableCopy] retain];
-			[settings setValue:enabledIdentifiers forKey:@"enabledSections"];
-			[settings setValue:disabledIdentifiers forKey:@"disabledSections"];
+			_enabledIdentifiers = [[NSMutableArray alloc] init];
+			_disabledIdentifiers = [@[@"Recent", @"Favorites", @"Application List"] mutableCopy];
+			[settings setValue:_enabledIdentifiers forKey:@"enabledSections"];
+			[settings setValue:_disabledIdentifiers forKey:@"disabledSections"];
 			[settings writeToFile:plistPath atomically:YES];
 		}
 
 		_specifiers = [[self loadSpecifiersFromPlistName:@"ListLauncherPref" target:self] retain];
 
-		for(id spec in [[enabledIdentifiers reverseObjectEnumerator] allObjects]) {
+		for(id spec in [[_enabledIdentifiers reverseObjectEnumerator] allObjects]) {
 			NSString *classString = [@"LL" stringByAppendingString:[[[spec componentsSeparatedByString:@" "] objectAtIndex:0] stringByAppendingString:@"Controller"]];
 			PSSpecifier* firstSpecifier = [PSSpecifier preferenceSpecifierNamed:spec target:self set:nil get:nil detail:NSClassFromString(classString) cell:[PSTableCell cellTypeFromString:@"PSLinkCell"] edit:1];
+			
+			if([spec isEqual:@"Recent"]) {
+				[firstSpecifier setProperty:@"Recents.png" forKey:@"icon"];
+			} else if([spec isEqual:@"Favorites"]) {
+				[firstSpecifier setProperty:@"Favorites.png" forKey:@"icon"];
+			} else if([spec isEqual:@"Application List"]) {
+				[firstSpecifier setProperty:@"Applications.png" forKey:@"icon"];
+			}
+
 			[_specifiers insertObject:firstSpecifier atIndex:1];
 		}
 
-		for(id spec in [[disabledIdentifiers reverseObjectEnumerator] allObjects]) {
+		for(id spec in [[_disabledIdentifiers reverseObjectEnumerator] allObjects]) {
 			NSString *classString = [@"LL" stringByAppendingString:[[[spec componentsSeparatedByString:@" "] objectAtIndex:0] stringByAppendingString:@"Controller"]];
 			PSSpecifier* firstSpecifier = [PSSpecifier preferenceSpecifierNamed:spec target:self set:nil get:nil detail:NSClassFromString(classString) cell:[PSTableCell cellTypeFromString:@"PSLinkCell"] edit:1];
-			[_specifiers insertObject:firstSpecifier atIndex:2+[enabledIdentifiers count]];
+			[_specifiers insertObject:firstSpecifier atIndex:2+[_enabledIdentifiers count]];
 		}
 
 		NSLog(@"settings = %@",settings);
@@ -75,8 +85,6 @@ static NSString *plistPath = @"/var/mobile/Library/Preferences/org.thebigboss.li
 }
 
 - (void)dealloc {
-	[disabledIdentifiers release];
-	[enabledIdentifiers release];
 	[super dealloc];
 }
 
@@ -137,38 +145,55 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 }
 
 -(void)tableView: (UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndex toIndexPath:(NSIndexPath *)toIndex {
-	NSMutableDictionary *settings = [[[NSMutableDictionary alloc] initWithContentsOfFile:plistPath] retain];
-	NSString *title = [@"" retain];
+	NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
+	NSString *title = @"";
 
 	if(fromIndex.section == 0) { // Enabled 
-		title = [enabledIdentifiers objectAtIndex:fromIndex.row];
-		[enabledIdentifiers removeObjectAtIndex:fromIndex.row];
-		[settings setValue:enabledIdentifiers forKey:@"enabledSections"];
+		title = [_enabledIdentifiers objectAtIndex:fromIndex.row];
+		[_enabledIdentifiers removeObjectAtIndex:fromIndex.row];
+		[settings setValue:_enabledIdentifiers forKey:@"enabledSections"];
 	} else {
-		title = [disabledIdentifiers objectAtIndex:fromIndex.row];
-		[disabledIdentifiers removeObjectAtIndex:fromIndex.row];
-		[settings setValue:disabledIdentifiers forKey:@"disabledSections"];
+		title = [_disabledIdentifiers objectAtIndex:fromIndex.row];
+		[_disabledIdentifiers removeObjectAtIndex:fromIndex.row];
+		[settings setValue:_disabledIdentifiers forKey:@"disabledSections"];
 	}
 
 	if(toIndex.section == 0) { // Enabled 
-		[enabledIdentifiers insertObject:title atIndex:toIndex.row];
-		[settings setValue:enabledIdentifiers forKey:@"enabledSections"];
+		[_enabledIdentifiers insertObject:title atIndex:toIndex.row];
+		[settings setValue:_enabledIdentifiers forKey:@"enabledSections"];
 	} else { // disabled
-		[disabledIdentifiers insertObject:title atIndex:toIndex.row];
-		[settings setValue:disabledIdentifiers forKey:@"disabledSections"];
+		[_disabledIdentifiers insertObject:title atIndex:toIndex.row];
+		[settings setValue:_disabledIdentifiers forKey:@"disabledSections"];
 	}
 
 	[settings writeToFile:plistPath atomically:YES];
 
-	[title release];
+	//[title release];
 	tableView.allowsSelectionDuringEditing = YES; 
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
 	cell.editingAccessoryView = cell.accessoryView;
-	if(indexPath.section < 2 || indexPath.section > 3)
+	if(indexPath.section < 2 || indexPath.section > 3 || (indexPath.section == 3 && indexPath.row == 0))
 		cell.editingAccessoryType = UITableViewCellAccessoryDisclosureIndicator;
+	if(indexPath.section == 0) {
+		// Or use +[UIImage imageNamed:(NSString *)name inBundle:(NSBundle *)bundle
+		NSString *imageName = [@"/Library/Application Support/ListLauncher7/assets/" stringByAppendingString:[_enabledIdentifiers objectAtIndex:indexPath.row]];
+		imageName = [imageName stringByAppendingString:@".png"];
+		UIImage *icon =  [UIImage imageWithContentsOfFile:imageName];
+		NSLog(@"inserting image %@ for %@",imageName,icon);
+		cell.imageView.hidden = NO;
+		cell.imageView.image = icon;
+	} else if(indexPath.section == 1) {
+		// Or use +[UIImage imageNamed:(NSString *)name inBundle:(NSBundle *)bundle
+		NSString *imageName = [@"/Library/Application Support/ListLauncher7/assets/" stringByAppendingString:[_disabledIdentifiers objectAtIndex:indexPath.row]];
+		imageName = [imageName stringByAppendingString:@".png"];
+		UIImage *icon =  [UIImage imageWithContentsOfFile:imageName];
+		NSLog(@"inserting image %@ for %@",imageName,icon);
+		cell.imageView.hidden = NO;
+		cell.imageView.image = icon;
+	}
 	tableView.allowsSelectionDuringEditing = YES; 
 	tableView.editing = YES;
 	[super setEditingButtonHidden:NO animated:NO];
@@ -180,10 +205,10 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 	return 5;
 }
 - (NSInteger) tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-	if(section == 0) return [enabledIdentifiers count]; //count
-	if(section == 1) return [disabledIdentifiers count]; //count
+	if(section == 0) return [_enabledIdentifiers count]; //count
+	if(section == 1) return [_disabledIdentifiers count]; //count
 	if(section == 2) return 1;
-	if(section == 3) return 2; 
+	if(section == 3) return 3; 
 	if(section == 4) return 1;
 	return 0; 
 }
@@ -192,7 +217,7 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 	tableView.allowsSelectionDuringEditing = YES; 
 
 	if(indexPath.section == 0) { // enabled 
-		NSString *spec = [enabledIdentifiers objectAtIndex:indexPath.row];
+		NSString *spec = [_enabledIdentifiers objectAtIndex:indexPath.row];
 		NSString *classString = [@"LL" stringByAppendingString:[[[spec componentsSeparatedByString:@" "] objectAtIndex:0] stringByAppendingString:@"Controller"]];
 		LLFavoritesAddController *_controller = [[NSClassFromString(classString) alloc] init];
 		_controller.sortedDisplayIdentifiers = [self sortedDisplayIdentifiers];
@@ -201,7 +226,7 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 			[self.navigationController pushViewController:_controller animated:YES];
 		}
 	} else if(indexPath.section == 1) { // disabled
-		NSString *spec = [disabledIdentifiers objectAtIndex:indexPath.row];
+		NSString *spec = [_disabledIdentifiers objectAtIndex:indexPath.row];
 		NSString *classString = [@"LL" stringByAppendingString:[[[spec componentsSeparatedByString:@" "] objectAtIndex:0] stringByAppendingString:@"Controller"]];
 		LLFavoritesAddController *_controller = [[NSClassFromString(classString) alloc] init];
 		_controller.sortedDisplayIdentifiers = [self sortedDisplayIdentifiers];
@@ -236,14 +261,18 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 -(void)generateAppList {
 	NSString *plistPath = @"/var/mobile/Library/Preferences/org.thebigboss.listlauncher7.applist.plist";
 	NSMutableDictionary *appsettings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
+
 	if(!appsettings) {
 			appsettings = [NSMutableDictionary dictionary];
 			[appsettings writeToFile:plistPath atomically:YES];
 	}
-	_applicationList = [[ALApplicationList sharedApplicationList] retain];
 
-	_sortedDisplayIdentifiers =  [[[NSMutableDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/org.thebigboss.listlauncher7.applist.plist"] valueForKey:@"applications"] ?: [[[_applicationList.applications allKeys] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
-	    return [[_applicationList.applications objectForKey:obj1] caseInsensitiveCompare:[_applicationList.applications objectForKey:obj2]];}] retain];
+	_applicationList = [ALApplicationList sharedApplicationList];
+
+	_sortedDisplayIdentifiers =  [[[NSMutableDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/org.thebigboss.listlauncher7.applist.plist"] valueForKey:@"applications"] ?: [[_applicationList.applications allKeys] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+	    return [[_applicationList.applications objectForKey:obj1] caseInsensitiveCompare:[_applicationList.applications objectForKey:obj2]];}];
+	
+
 	[appsettings setValue:_sortedDisplayIdentifiers forKey:@"applications"];
 	[appsettings writeToFile:plistPath atomically:YES];
 }

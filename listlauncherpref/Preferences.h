@@ -90,3 +90,19 @@
 -(NSArray *)sortedDisplayIdentifiers;
 -(id)applicationList;
 @end
+
+
+@interface LLTweakListController : PSListController {
+}
+@end
+
+@interface LLAboutController : PSListController
+@end
+
+@interface LLAdvancedController : PSListController
+@end
+
+@interface CreditCellClass : PSTableCell <UITextViewDelegate> { 
+	UITextView *_plainTextView;
+}
+@end

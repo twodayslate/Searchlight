@@ -1,9 +1,9 @@
-#import "AboutPref.h"
+#import "Preferences.h"
 
-@implementation MoreTweaksController
+@implementation LLTweakListController
 - (id)specifiers {
-	if(_specifiers == nil) {
-		_specifiers = [[self loadSpecifiersFromPlistName:@"MoreTweaksPref" target:self] retain];
+	if(!_specifiers) {
+		_specifiers = [[self loadSpecifiersFromPlistName:@"LLTweakListPref" target:self] retain];
 	}
 	return _specifiers;
 }
@@ -88,12 +88,12 @@
 
 
 
-@implementation AboutListLauncherController
+@implementation LLAboutController
 
 - (NSArray *)specifiers {
 	if (!_specifiers) {
 		//NSString *compatibleName = MODERN_IOS ? @"AboutPrefs" : @"AboutPrefs";
-		NSString *compatibleName = @"AboutPref";
+		NSString *compatibleName = @"LLAboutPref";
 		_specifiers = [[self loadSpecifiersFromPlistName:compatibleName target:self] retain];
 	}
 

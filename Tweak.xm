@@ -13,7 +13,7 @@ static NSString *recentName = @"RECENT";
 static NSString *applicationListName = @"APPLICATION LIST";
 static NSString *favoritesName = @"FAVORITES";
 
-static bool logging = false;
+static bool logging, hideKeyboard, selectall = false;
 
 static NSMutableArray *indexValues = nil;
 static NSMutableArray *indexPositions = nil; 
@@ -40,6 +40,20 @@ static NSMutableArray *indexPositions = nil;
 	if(logging) %log;
 	if([self shouldDisplayListLauncher]) return indexValues;
 	return nil;
+}
+
+-(void)searchGesture:(id)arg1 completedShowing:(BOOL)arg2  {
+	%orig;
+	if(hideKeyboard && arg2)
+		[self _setShowingKeyboard:NO];
+}
+
+-(void)_setShowingKeyboard:(BOOL)arg1 {
+	%orig;
+	if(arg1 && selectall) {
+		SBSearchHeader *sheader = MSHookIvar<SBSearchHeader *>(self, "_searchHeader");
+		[[sheader searchField] selectAll:self];
+	}
 }
 
 -(int)tableView:(UITableView *)arg1 numberOfRowsInSection:(int)arg2 {
@@ -313,6 +327,11 @@ static void loadPrefs() {
 	logging = [settings objectForKey:@"logging_enabled"] ? [[settings objectForKey:@"logging_enabled"] boolValue] : NO;
 
 	if(logging) NSLog(@"ListLauncher7 Settings = %@",settings);
+
+	hideKeyboard = [settings objectForKey:@"hide_keyboard"] ? [[settings objectForKey:@"hide_keyboard"] boolValue] : NO;
+
+	selectall = [settings objectForKey:@"hide_keyboard"] ? [[settings objectForKey:@"selectall"] boolValue] : NO;
+
 
 	enabledSections = [settings objectForKey:@"enabledSections"] ?: @[]; [enabledSections retain];
     maxRecent = [settings objectForKey:@"maxRecent"] ? [[settings objectForKey:@"maxRecent"] integerValue] : 3;

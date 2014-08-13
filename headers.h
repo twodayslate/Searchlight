@@ -18,6 +18,8 @@
 -(int)tableView:(id)arg1 sectionForSectionIndexTitle:(id)arg2 atIndex:(int)arg3;
 -(id)applicationList;
 -(id)sortedDisplayIdentifiers;
+-(void)_setShowingKeyboard:(BOOL)arg1 ;
+-(void)searchGesture:(id)arg1 completedShowing:(BOOL)arg2 ;
 @end
 
 @interface SBSearchHeader

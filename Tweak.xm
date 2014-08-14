@@ -52,7 +52,9 @@ static NSMutableArray *indexPositions = nil;
 	%orig;
 	if(arg1 && selectall) {
 		SBSearchHeader *sheader = MSHookIvar<SBSearchHeader *>(self, "_searchHeader");
-		[[sheader searchField] selectAll:self];
+		if(![[sheader searchField].text isEqual:@""]) {
+			[[sheader searchField] selectAll:self];
+		}
 	}
 }
 
@@ -377,6 +379,19 @@ static void loadPrefs() {
 -(void)remove:(id)arg1 {
 	%orig;
 	recentApplications = [[self identifiers] retain];
+}
+%end
+
+%hook UITextField
+-(void)_becomeFirstResponder {
+	%orig; 
+	SBSearchHeader *sheader = MSHookIvar<SBSearchHeader *>([%c(SBSearchViewController) sharedInstance], "_searchHeader");
+	UITextField *tfield = [sheader searchField];
+	if(selectall && self == tfield) {
+		if(![tfield.text isEqual:@""]) {
+			[tfield selectAll:[%c(SBSearchViewController) sharedInstance]];
+		}
+	}
 }
 %end
 

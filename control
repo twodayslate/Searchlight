@@ -1,7 +1,7 @@
 Package: org.thebigboss.listlauncher7
 Name: ListLauncher7
 Depends: mobilesubstrate, applist
-Version: 1.3
+Version: 1.31
 Architecture: iphoneos-arm
 Description: Launch apps fast!
 Maintainer: twodayslate

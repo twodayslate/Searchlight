@@ -11,4 +11,4 @@ Donations via [Paypal](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hoste
 
 There is no warranty for this product and comes as is. @twodayslate is not responsible for any damage that this product may cause. Pull requests welcomed! 
 
-Icons by [8Icons](http://icons8.com/).
+Icons by [Icons8](http://icons8.com/).

@@ -194,7 +194,7 @@ static NSMutableArray *indexPositions = nil;
 		} else if([[enabledSections objectAtIndex:indexPath.section] isEqual:@"Favorites"]) {
 			identifier = [favoritesDisplayIdentifiers objectAtIndex:indexPath.row];
 		} else if([[enabledSections objectAtIndex:indexPath.section] isEqual:@"Recent"]) {
-			identifier = @"";
+			identifier = [recentApplications objectAtIndex:indexPath.row];
 		}
 
 	    [tableView deselectRowAtIndexPath:indexPath animated:YES];
@@ -302,8 +302,8 @@ static void setFavorites (NSMutableDictionary *settings) {
 	if(logging) NSLog(@"inside setFavorites");
 	favoritesDisplayIdentifiers = [[[NSMutableArray alloc] init] retain];
 	NSMutableArray *favoriteList = [(NSMutableArray *) [settings valueForKey:@"favorites"] retain];
-	favoriteList =  [[[favoriteList sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
-	    return 	[[favoriteList objectAtIndex:[favoriteList indexOfObject:obj1]] objectAtIndex:1] > [[favoriteList objectAtIndex:[favoriteList indexOfObject:obj2]] objectAtIndex:1]	;}] mutableCopy] retain];
+	favoriteList =  [[favoriteList sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+	    return 	[[obj1 objectAtIndex:1] integerValue] > [[obj2 objectAtIndex:1] integerValue]	;}] mutableCopy];
 	for(id spec in favoriteList) {
 		[favoritesDisplayIdentifiers insertObject:[spec objectAtIndex:0] atIndex:[favoritesDisplayIdentifiers count]];
 	}

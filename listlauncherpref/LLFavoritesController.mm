@@ -29,18 +29,21 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 			[settings writeToFile:plistPath atomically:YES];
 		}
 
+		NSLog(@"favoriteList before sort = %@",_favoriteList);
+
 		_favoriteList =  [[_favoriteList sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
-	    return 	[[_favoriteList objectAtIndex:[_favoriteList indexOfObject:obj1]] objectAtIndex:1] > [[_favoriteList objectAtIndex:[_favoriteList indexOfObject:obj2]] objectAtIndex:1]	;}] mutableCopy];
+	    return 	[[obj1 objectAtIndex:1] integerValue] > [[obj2 objectAtIndex:1] integerValue]	;}] mutableCopy];
 	
 
 		
-		//NSLog(@"favoriteList = %@",favoriteList);
+		NSLog(@"favoriteList afer sort = %@",_favoriteList);
+
 		int count = 0;
 		for(int i = 0; i < [_favoriteList count]; i++) {
 			id spec = [_favoriteList objectAtIndex:i];
-			int index = [_favoriteList indexOfObject:spec];
-			[_favoriteList removeObjectAtIndex:index];
-			[_favoriteList insertObject:@[ [spec objectAtIndex:0],[[NSNumber alloc] initWithInt:count] ] atIndex:index];
+			// int index = [_favoriteList indexOfObject:spec];
+			// [_favoriteList removeObjectAtIndex:index];
+			// [_favoriteList insertObject:@[ [spec objectAtIndex:0],[[NSNumber alloc] initWithInt:count] ] atIndex:index];
 			PSSpecifier* appSpecifier = [PSSpecifier preferenceSpecifierNamed:[_applicationList valueForKey:@"displayName" forDisplayIdentifier:[spec objectAtIndex:0]] target:self set:nil get:nil detail:nil cell:[PSTableCell cellTypeFromString:@"PSTitleCell"] edit:1];
 			[appSpecifier setIdentifier:[spec objectAtIndex:0]];
 			[_specifiers insertObject:appSpecifier atIndex:[_specifiers count]];
@@ -175,17 +178,29 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 	[settings writeToFile:plistPath atomically:YES];
 	NSLog(@"inside moveRow message");
 	NSString *name = [_favoriteList objectAtIndex:fromIndex.row];
+	NSLog(@"moving = %@",name);
+
+	NSLog(@"favoriteList before: = %@",_favoriteList);
+
 	[_favoriteList removeObjectAtIndex:fromIndex.row];
 	[_favoriteList insertObject:name atIndex:toIndex.row];
 
-	int count = 0;
-		for(int i = 0; i < [_favoriteList count]; i++) {
-			id spec = [[_favoriteList objectAtIndex:i] retain];
-			int index = [_favoriteList indexOfObject:spec];
-			[_favoriteList removeObjectAtIndex:index];
-			[_favoriteList insertObject:@[ [spec objectAtIndex:0],[[NSNumber alloc] initWithInt:count] ] atIndex:index];
-			count++;
-		}
+	NSLog(@"favoriteList right after removal/addition = %@",_favoriteList);
+
+	NSMutableArray *tempFavorites = [[@[] mutableCopy] retain];
+	for(int i = 0; i < [_favoriteList count]; i++) {
+		id spec = [[_favoriteList objectAtIndex:i] retain];
+		[tempFavorites insertObject:@[[spec objectAtIndex:0],[[NSNumber alloc] initWithInt:i]] atIndex:i];
+		// int index = [_favoriteList indexOfObject:spec];
+		// [_favoriteList removeObjectAtIndex:index];
+		// [_favoriteList insertObject:@[ [spec objectAtIndex:0],[[NSNumber alloc] initWithInt:count] ] atIndex:index];
+		// count++;
+	}
+	NSLog(@"tempFAvorites = %@",tempFavorites);
+	NSLog(@"favoriteList = %@",_favoriteList);
+	_favoriteList = tempFavorites;
+	_favoriteList =  [[[_favoriteList sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+	    return 	[[_favoriteList objectAtIndex:[_favoriteList indexOfObject:obj1]] objectAtIndex:1] > [[_favoriteList objectAtIndex:[_favoriteList indexOfObject:obj2]] objectAtIndex:1]	;}] mutableCopy] retain];
 
 	[settings setValue:_favoriteList forKey:@"favorites"];
 	NSLog(@"After changes in settings = %@",settings);
@@ -285,7 +300,8 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.l
 	NSMutableArray *favoriteList = (NSMutableArray *) [settings valueForKey:@"favorites"];
 
 	if([value boolValue]) {
-		[favoriteList addObject:@[[specifier identifier],[[NSNumber alloc] initWithInt:[favoriteList count]]]];
+		if(![favoriteList containsObject:[specifier identifier]])
+			[favoriteList addObject:@[[specifier identifier],[[NSNumber alloc] initWithInt:[favoriteList count]]]];
 
 	} else {
 		for(int i = 0; i < [favoriteList count]; i++) {

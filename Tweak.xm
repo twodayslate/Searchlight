@@ -44,12 +44,15 @@ static NSMutableArray *indexPositions = nil;
 
 -(void)searchGesture:(id)arg1 completedShowing:(BOOL)arg2  {
 	%orig;
-	if(hideKeyboard && arg2)
-		[self _setShowingKeyboard:NO];
 }
 
 -(void)_setShowingKeyboard:(BOOL)arg1 {
+	if(arg1 && hideKeyboard) {
+		return;
+	}
+
 	%orig;
+
 	if(arg1 && selectall) {
 		SBSearchHeader *sheader = MSHookIvar<SBSearchHeader *>(self, "_searchHeader");
 		if(![[sheader searchField].text isEqual:@""]) {
@@ -396,6 +399,8 @@ static void loadPrefs() {
 %end
 
 %ctor {
+	NSLog(@"Loading ListLauncher7...");
+
 	dlopen("/Library/MobileSubstrate/DynamicLibraries/SpotDefine.dylib", RTLD_NOW);
 	dlopen("/Library/MobileSubstrate/DynamicLibraries/SearchPlus.dylib", RTLD_NOW);
     //CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("org.thebigboss.listlauncher7/settingschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
@@ -403,4 +408,5 @@ static void loadPrefs() {
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("org.thebigboss.listlauncher7/saved"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 
     loadPrefs();
+    NSLog(@"Done loading ListLauncher7!");
 }

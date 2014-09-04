@@ -398,6 +398,14 @@ static void loadPrefs() {
 }
 %end
 
+%hook SpringBoard
+-(id)init {
+	id sb = %orig;
+	if(sb) loadPrefs();
+	return sb;
+}
+%end
+
 %ctor {
 	NSLog(@"Loading ListLauncher7...");
 
@@ -407,6 +415,6 @@ static void loadPrefs() {
     
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("org.thebigboss.listlauncher7/saved"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 
-    loadPrefs();
+    //loadPrefs();
     NSLog(@"Done loading ListLauncher7!");
 }

@@ -1,10 +1,10 @@
-Package: org.thebigboss.listlauncher7
-Name: ListLauncher7
-Depends: mobilesubstrate, applist
+Package: org.thebigboss.searchlight
+Name: Searchlight
+Depends: mobilesubstrate, applist, libactivator
 Version: 1.315
 Architecture: iphoneos-arm
-Description: Launch apps fast!
+Description: System search and applicaiton launcher
 Maintainer: twodayslate
 Author: twodayslate
 Section: Tweaks
-Icon: file:///Library/PreferenceBundles/ListLauncherPref.bundle/icon.png
+Icon: file:///Library/PreferenceBundles/searchlightpreferences.bundle/icon.png

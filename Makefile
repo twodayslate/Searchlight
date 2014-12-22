@@ -7,16 +7,16 @@ ARCHS := armv7 arm64
 
 include theos/makefiles/common.mk
 
-TWEAK_NAME = ListLauncher7
-ListLauncher7_FILES = Tweak.xm
-ListLauncher7_FRAMEWORKS = UIKit
-ListLauncher7_PRIVATE_FRAMEWORKS = Preferences
-ListLauncher7_LIBRARIES = applist
-ListLauncher7_ARCHS = armv7 arm64
+TWEAK_NAME = Searchlight
+Searchlight_FILES = Tweak.xm
+Searchlight_FRAMEWORKS = UIKit
+Searchlight_PRIVATE_FRAMEWORKS = Preferences
+Searchlight_LIBRARIES = applist
+Searchlight_ARCHS = armv7 arm64
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
-SUBPROJECTS += listlauncherpref
+SUBPROJECTS += searchlightpreferences
 
 include $(THEOS_MAKE_PATH)/aggregate.mk
 

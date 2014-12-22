@@ -13,7 +13,7 @@ static NSString *favoritesName = @"FAVORITES";
 static NSString *lockscreenIdentifier = nil;
 static NSString *applicationIdentifier = nil;
 static _UIBackdropView *background = nil;
-
+static int headerStyle = 2060;
 static bool logging, hideKeyboard, selectall = false;
 
 static NSMutableArray *indexValues = nil;
@@ -65,7 +65,7 @@ static void setHeader() {
 		[background removeFromSuperview];
 	}
 	
-	_UIBackdropViewSettings *settings = [_UIBackdropViewSettings settingsForStyle:2060];
+	_UIBackdropViewSettings *settings = [_UIBackdropViewSettings settingsForStyle:headerStyle];
 
 // initialization of the blur view
 	background = [[_UIBackdropView alloc] initWithFrame:CGRectMake(0,-20,nav.navigationBar.frame.size.width,nav.navigationBar.frame.size.height+20) autosizesToFitSuperview:NO settings:settings];
@@ -722,11 +722,13 @@ static void loadPrefs() {
 
 	logging = [settings objectForKey:@"logging_enabled"] ? [[settings objectForKey:@"logging_enabled"] boolValue] : NO;
 	logging = YES;
-	if(logging) NSLog(@"ListLauncher7 Settings = %@",settings);
+	if(logging) NSLog(@"Searchlight Settings = %@",settings);
 
 	hideKeyboard = [settings objectForKey:@"hide_keyboard"] ? [[settings objectForKey:@"hide_keyboard"] boolValue] : NO;
 
 	selectall = [settings objectForKey:@"hide_keyboard"] ? [[settings objectForKey:@"selectall"] boolValue] : NO;
+
+	headerStyle = [settings objectForKey:@"header_style"] ? [[settings objectForKey:@"header_style"] integerValue] : 2060;
 
 
 	enabledSections = [settings objectForKey:@"enabledSections"] ?: @[]; [enabledSections retain];

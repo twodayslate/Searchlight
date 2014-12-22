@@ -1,14 +1,25 @@
-ListLauncher 7
+Searchlight
 -------------
-Launch apps fast! A full applcation launcher inside of Spotlight!
+Searchlight is a system search and application launcher that can be launched anywhere! Take control of Spotlight!
 
-This tweak is compatble with iOS 7.x.x
+iOS 8.x compatible! This package replaces AnySpot and ListLauncher7 for iOS 7
 
-This is a free and open source tweak created by @twodayslate. The original tweak, ListLauncher, was created by Grant Paul (@chpwn) and was for iOS 5 and below. ListLauncher is being developed with permission and is under the "Attribution-NonCommercial-ShareAlike 4.0 International" license. ListLauncher6 is available for iOS6.  
-This tweak uses the applist library by Ryan Petrich (@rpetrich), preferenceloader by Dustin Howett (@DHowett), and mobilesubstrate by Jay Freeman (@saurik).  
+When the system search has no input or is just launched the user can display ‘Recent’, ‘Favorite’, and list all their applications. 
+Recent: Never go to the app switcher again! Show the most recently launched applications. 
+Favorites: Put your favorite apps at the top for quick and easy access!
+Application List: Display all the applications on your phone, with alphabetized indexing!
+
+Configure via settings. This package uses activator and it is strongly encouraged to disable Activator banners. 
+
+Rotation/Landscape support are currently “experimental”. 
+
+A full list of known bugs and planned features are listed below: 
+http://zac.gorak.us/cydia/searchlight
+For developers, or people wanting to learn how to make tweaks, the code for Searchlight is available on Github. Pull requests are welcomed
+
+
+This package is created under the "Attribution-NonCommercial-ShareAlike 4.0 International" license.
 
 Donations via [Paypal](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=2R9WDZCE7CPZ8) or [Bitcoin](https://coinbase.com/checkouts/59ead722b181591150e7de4ed6769cb4) are welcomed!
 
-There is no warranty for this product and comes as is. @twodayslate is not responsible for any damage that this product may cause. Pull requests welcomed! 
-
-Icons by [Icons8](http://icons8.com/).
+There is no warranty for this product and comes as is. @twodayslate is not responsible for any damage that this product may cause.

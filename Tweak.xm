@@ -120,7 +120,7 @@ static void setHeader() {
 	// SBSearchHeader *sheader = MSHookIvar<SBSearchHeader *>(self, "_searchHeader");
 	// NSString *currentText = [sheader searchField].text;
 	//NSLog(@"shouldDisplay _hasNoQuery = %f",(float)[self _hasNoQuery]);
-	return [self _hasNoQuery];
+	return [self _hasNoQuery] && [enabledSections count] > 0;
 	//return [currentText isEqualToString:@""];
 }
 
@@ -244,12 +244,12 @@ static void setHeader() {
 -(int)numberOfSectionsInTableView:(id)arg1 	{
 	if(logging) %log;
 	if([self shouldDisplayListLauncher]) {
-		if([enabledSections containsObject:@"Recent"]) {
-			// if([recentApplications count] == 0) {
-			// 	hideRecent = YES;
-			// 	return [enabledSections count] - 1;
-			// }
-		}
+		// if([enabledSections containsObject:@"Recent"]) {
+		// 	// if([recentApplications count] == 0) {
+		// 	// 	hideRecent = YES;
+		// 	// 	return [enabledSections count] - 1;
+		// 	// }
+		// }
 		return [enabledSections count];
 	}
 	return %orig;
@@ -304,10 +304,11 @@ static void setHeader() {
 
 -(id)tableView:(UITableView *)arg1 cellForRowAtIndexPath:(NSIndexPath *)arg2 {
 	if(logging) %log;
-
+	NSLog(@"before this line :)");
 	if(arg2.row > [listLauncherDisplayIdentifiers count]-1) { return %orig; } // fix for SpotDefine
+	NSLog(@"after this line :)");
 	if([self shouldDisplayListLauncher]) {
-
+		NSLog(@"inside listlauncher stuff");
 		NSString *identifier = [@"" retain];
 
 		if([[enabledSections objectAtIndex:arg2.section] isEqual:@"Application List"]) {

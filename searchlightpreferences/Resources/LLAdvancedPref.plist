@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>items</key>
+	<array>
+
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Header View</string>
+		</dict>
+		
+		<dict>
+			<key>cell</key>
+			<string>PSLinkListCell</string>
+			<key>label</key>
+			<string>Style</string>
+			<key>isController</key>
+			<true/>
+			<key>detail</key>
+        	<string>PSListItemsController</string>
+			<key>validValues</key>
+			<array>
+				<string>2060</string>
+				<string>0</string>
+				<string>1</string>
+				<string>2</string>
+			</array>
+			<key>validTitles</key>
+			<array>
+				<string>2060 - Adaptive Light (default)</string>
+				<string>0 - Light</string>
+				<string>1 - Dark</string>
+				<string>2 - Blur</string>
+			</array>
+			<key>shortTitles</key>
+			<array>
+				<string>2060</string>
+				<string>0</string>
+				<string>1</string>
+				<string>2</string>
+			</array>
+			<key>default</key>
+			<string>2060</string>
+			<key>defaults</key>
+			<string>org.thebigboss.anyspot</string>
+			<key>key</key>
+			<string>header_style</string>
+			<key>PostNotification</key>
+			<string>org.thebigboss.anyspot/settingschanged</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Logging</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<false/>
+			<key>defaults</key>
+			<string>org.thebigboss.searchlight</string>
+			<key>key</key>
+			<string>logging_enabled</string>
+			<key>label</key>
+			<string>Enabled</string>
+			<key>PostNotification</key>
+			<string>org.thebigboss.searchlight/settingschanged</string>
+		</dict>
+
+
+
+
+<!-- 		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Auto-Hide Keyboard</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<false/>
+			<key>defaults</key>
+			<string>org.thebigboss.listlauncher7</string>
+			<key>key</key>
+			<string>hide_keyboard</string>
+			<key>label</key>
+			<string>Enabled</string>
+			<key>PostNotification</key>
+			<string>org.thebigboss.listlauncher7/settingschanged</string>
+		</dict> -->
+
+<!-- 		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Select all text on launch</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<false/>
+			<key>defaults</key>
+			<string>org.thebigboss.listlauncher7</string>
+			<key>key</key>
+			<string>selectall</string>
+			<key>label</key>
+			<string>Enabled</string>
+			<key>PostNotification</key>
+			<string>org.thebigboss.listlauncher7/settingschanged</string>
+		</dict> -->
+
+<!-- 		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSLinkCell</string>
+			<key>isController</key>
+			<string>1</string>
+			<key>label</key>
+			<string>More Tweaks!</string>
+			<key>icon</key>
+			<string>more.png</string>
+			<key>detail</key>
+			<string>LLTweakListController</string> <!-- AboutController brings up teh standard about page
+		</dict> -->
+	</array>
+	<key>title</key>
+	<string>Appearance &amp; Behavior</string>
+</dict>
+</plist>

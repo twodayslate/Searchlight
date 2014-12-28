@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>items</key>
+	<array>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Header Name</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSEditTextCell</string>
+			<key>placeholder</key>
+			<string>Blank for default</string>
+			<key>key</key>
+        	<string>applicationListName</string>
+        	<key>default</key>
+        	<string></string>
+        	<key>defaults</key>
+			<string>org.thebigboss.searchlight</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Blacklist</string>
+		</dict>
+
+		<!-- <dict>
+			<key>cell</key>
+			<string>PSLinkCell</string>
+			<key>bundle</key>
+			<string>AppList</string>
+			<key>isController</key>
+			<string>1</string>
+			<key>label</key>
+			<string>Whitelist</string>
+			<key>icon</key>
+			<string>Favorites.png</string>
+			<key>ALAllowsSelection</key>
+			<string>1</string>
+			<key>ALChangeNotification</key>
+			<string>org.thebigboss.listlauncher7/settingschanged</string>
+			<key>ALSectionDescriptors</key>
+			<array>
+				<dict>
+					<key>footer-title</key>
+					<string>Check what apps you want to show up in your favorites</string>
+					<key>items</key>
+					<array/>
+				</dict>
+				<dict>
+					<key>cell-class-name</key>
+					<string>ALCheckCell</string>
+					<key>icon-size</key>
+					<string>29</string>
+					<key>suppress-hidden-apps</key>
+					<string>0</string>
+					<key>title</key>
+					<string>All Applications</string>
+				</dict>
+			</array>
+			<key>ALSettingsKeyPrefix</key>
+			<string>whitelist-</string>
+			<key>ALSettingsPath</key>
+			<string>/var/mobile/Library/Preferences/org.thebigboss.listlauncher7.plist</string>
+		</dict> --> 
+
+<!-- 		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>ListLauncher</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<false/>
+			<key>defaults</key>
+			<string>org.thebigboss.listlauncher7</string>
+			<key>key</key>
+			<string>listlauncher_enabled</string>
+			<key>label</key>
+			<string>Enabled</string>
+			<key>PostNotification</key>
+			<string>org.thebigboss.listlauncher7/settingschanged</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSLinkCell</string>
+			<key>bundle</key>
+			<string>AppList</string>
+			<key>key</key>
+			<string>blacklist</string>
+			<key>isController</key>
+			<string>1</string>
+			<key>label</key>
+			<string>Blacklist</string>
+			<key>icon</key>
+			<string>blacklist.png</string>
+			<key>ALAllowsSelection</key>
+			<string>1</string>
+			<key>ALChangeNotification</key>
+			<string>org.thebigboss.listlauncher7/settingschanged</string>
+			<key>ALSectionDescriptors</key>
+			<array>
+				<dict>
+					<key>footer-title</key>
+					<string>Use the settings to disable applications from showing up in the launcher.</string>
+					<key>items</key>
+					<array/>
+				</dict>
+				<dict>
+					<key>cell-class-name</key>
+					<string>ALSwitchCell</string>
+					<key>icon-size</key>
+					<string>29</string>
+					<key>suppress-hidden-apps</key>
+					<string>0</string>
+					<key>title</key>
+					<string>All Applications</string>
+				</dict>
+			</array>
+			<key>ALSettingsKeyPrefix</key>
+			<string>blacklist-</string>
+			<key>ALSettingsPath</key>
+			<string>/var/mobile/Library/Preferences/org.thebigboss.listlauncher7.plist</string>
+		</dict> -->
+
+
+		<!-- <dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>footerText</key>
+			<string>No respring required! Be patient.</string>
+			<key>footerAlignment</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+            <key>cell</key>
+            <string>PSButtonCell</string>
+            <key>label</key>
+            <string>Save/Refresh</string>
+            <key>id</key>
+            <string>save</string>
+            <key>action</key>
+            <string>save</string>
+            <key>PostNotification</key>
+			<string>org.thebigboss.listlauncher7/saved</string>
+        </dict>
+
+        <dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Donate</string>
+		</dict>
+		<dict>
+			<key>cell</key>			<string>PSButtonCell</string>
+			<key>label</key>		<string>Bitcoin</string>
+			<key>icon</key> 	    <string>bitcoin.png</string>
+			<key>action</key>  		<string>bitcoin</string>
+		</dict>
+		<dict>
+			<key>cell</key>			<string>PSButtonCell</string>
+			<key>label</key>		<string>Paypal</string>
+			<key>icon</key> 	    <string>paypal.png</string>
+			<key>action</key>  		<string>paypal</string>
+		</dict>
+
+        <dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSLinkCell</string>
+			<key>isController</key>
+			<string>1</string>
+			<key>label</key>
+			<string>Advanced Options</string>
+			<key>icon</key>
+			<string>About.png</string>
+			<key>detail</key>
+			<string>AboutListLauncherController</string> <!-- AboutController brings up teh standard about page -->
+		<!-- </dict> -->
+
+	</array>
+	<key>title</key>
+	<string>Application List</string>
+</dict>
+</plist>

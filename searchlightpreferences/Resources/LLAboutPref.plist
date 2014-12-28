@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>items</key>
+	<array>
+
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>The tweak</string>
+			<key>footerText</key>
+			<string>Thanks for using Searchlight! Please send all feedback and support directly from Cydia.</string>
+			<key>footerAlignment</key>
+			<integer>1</integer>
+		</dict>
+
+		<dict>
+			<key>cell</key>			<string>PSButtonCell</string>
+			<key>label</key>		<string>Github</string>
+			<key>icon</key> 	    <string>github.png</string>
+			<key>action</key>  		<string>github</string>
+		</dict>
+		<dict>
+			<key>cell</key>			<string>PSStaticTextCell</string>
+			<key>cellClass</key>    <string>CreditCellClass</string>
+			<key>height</key> 	  	<integer>125</integer>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>The Developer</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>			<string>PSButtonCell</string>
+			<key>label</key>		<string>@twodayslate</string>
+			<key>icon</key> 	    <string>twitter.png</string>
+			<key>action</key>  		<string>twitter</string>
+		</dict>
+		<dict>
+			<key>cell</key>			<string>PSButtonCell</string>
+			<key>label</key>		<string>zac.gorak.us</string>
+			<key>icon</key> 	    <string>link.png</string>
+			<key>action</key>  		<string>website</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Donate</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>			<string>PSButtonCell</string>
+			<key>label</key>		<string>Bitcoin</string>
+			<key>icon</key> 	    <string>bitcoin.png</string>
+			<key>action</key>  		<string>bitcoin</string>
+		</dict>
+		<dict>
+			<key>cell</key>			<string>PSButtonCell</string>
+			<key>label</key>		<string>Paypal</string>
+			<key>icon</key> 	    <string>paypal.png</string>
+			<key>action</key>  		<string>paypal</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSLinkCell</string>
+			<key>isController</key>
+			<string>1</string>
+			<key>label</key>
+			<string>More Tweaks!</string>
+			<key>icon</key>
+			<string>more.png</string>
+			<key>detail</key>
+			<string>LLTweakListController</string> <!-- AboutController brings up teh standard about page -->
+		</dict>
+	</array>
+	<key>title</key>
+	<string>About</string>
+</dict>
+</plist>

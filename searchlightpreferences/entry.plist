@@ -1,0 +1,10 @@
+{
+    entry = {
+	bundle = searchlightpreferences;
+	cell = PSLinkCell;
+	detail = ListLauncherPrefListController;
+	icon = settings.png;
+	isController = 1;
+	label = "Searchlight";
+    };
+}

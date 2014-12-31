@@ -45,6 +45,8 @@
 -(void)activeInterfaceOrientationDidChangeToOrientation:(int)activeInterfaceOrientation willAnimateWithDuration:(double)duration fromOrientation:(int)orientation;
 -(void)activeInterfaceOrientationWillChangeToOrientation:(int)activeInterfaceOrientation;
 -(void)repositionCells;
+-(void)forceRotation;
+-(void)setHeaderbyChangingFrame:(bool)changeFrame withPushDown:(int)pushDown;
 @end
 
 @interface SBSearchHeader : UIView

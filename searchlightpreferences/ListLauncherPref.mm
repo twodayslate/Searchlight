@@ -175,8 +175,8 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 	tableView.allowsSelectionDuringEditing = YES; 
 }
 
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
+- (PSTableCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+	PSTableCell *cell = (PSTableCell *)[super tableView:tableView cellForRowAtIndexPath:indexPath];
 	NSLog(@"setting cell");
 	cell.editingAccessoryView = cell.accessoryView;
 	if(indexPath.section <= 4 || (indexPath.section == 5 && indexPath.row == 0))
@@ -202,6 +202,14 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 	tableView.editing = YES;
 	[super setEditingButtonHidden:NO animated:NO];
 	[super setEditButtonEnabled:NO];
+
+	if(indexPath.section == 0 && indexPath.row == 0 && !NSClassFromString(@"LASettingsViewController")) {
+		//cell.userInteractionEnabled = NO;
+		cell.accessoryType = UITableViewCellAccessoryNone;
+		cell.editingAccessoryType = UITableViewCellAccessoryNone;
+		cell.textLabel.textColor = [UIColor grayColor];
+		cell.detailTextLabel.text = @"n/a";
+	}
 
 	return cell;
 }
@@ -241,7 +249,36 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 		if (_controller) {
 			[self.navigationController pushViewController:_controller animated:YES];
 		}
-	} else { 
+	} else if(indexPath.section == 0 && indexPath.row == 0 && !NSClassFromString(@"LASettingsViewController")) {
+		NSLog(@"Activator not installed. Class not found! Do something here!");
+		UIAlertController *alertController = [UIAlertController
+                              alertControllerWithTitle:@"libactivator missing!"
+                              message:@"The libactivator package is missing. Please install it if you would like to assign an activator event to Searchlight."
+                              preferredStyle:UIAlertControllerStyleAlert];
+		UIAlertAction *cancelAction = [UIAlertAction 
+            actionWithTitle:NSLocalizedString(@"Cancel", @"Cancel action")
+                      style:UIAlertActionStyleCancel
+                    handler:^(UIAlertAction *action)
+                    {
+                      NSLog(@"Cancel action");
+
+                    }];
+
+		UIAlertAction *okAction = [UIAlertAction 
+            actionWithTitle:NSLocalizedString(@"Get", @"OK action")
+                      style:UIAlertActionStyleDefault
+                    handler:^(UIAlertAction *action)
+                    {
+                      NSLog(@"OK action");
+                      [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"cydia://package/libactivator"]];
+                      //[self deselectRowAtIndexPath:indexPath animated:YES];
+                    }];
+		[self.table deselectRowAtIndexPath:indexPath animated:YES];
+		[alertController addAction:cancelAction];
+		[alertController addAction:okAction];
+		//http://useyourloaf.com/blog/2014/09/05/uialertcontroller-changes-in-ios-8.html
+		[self presentViewController:alertController animated:YES completion:nil];
+	} else {
 		[super tableView:tableView didSelectRowAtIndexPath:indexPath];
 	}
 }

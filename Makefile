@@ -9,7 +9,7 @@ include theos/makefiles/common.mk
 
 TWEAK_NAME = Searchlight
 Searchlight_FILES = Tweak.xm
-Searchlight_FRAMEWORKS = UIKit
+Searchlight_FRAMEWORKS = UIKit QuartzCore CoreGraphics
 Searchlight_PRIVATE_FRAMEWORKS = Preferences
 Searchlight_LIBRARIES = applist
 Searchlight_ARCHS = armv7 arm64

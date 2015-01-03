@@ -42,6 +42,8 @@
 @end
 
 @interface PSTableCell : UITableViewCell
+@property(readonly, assign, nonatomic) UILabel* textLabel;
+@property (nonatomic,retain,readonly) UILabel * detailTextLabel; 
 -(id)initWithStyle:(int)arg1 reuseIdentifier:(id)arg2 specifier:(id)arg3 ;
 +(id)cellTypeFromString:arg1;
 @end

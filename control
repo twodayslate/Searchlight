@@ -1,6 +1,6 @@
 Package: org.thebigboss.searchlight
 Name: Searchlight
-Depends: mobilesubstrate, applist, libactivator
+Depends: mobilesubstrate, applist
 Version: 1.0
 Architecture: iphoneos-arm
 Description: System search and applicaiton launcher

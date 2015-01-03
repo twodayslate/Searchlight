@@ -14,7 +14,7 @@ static NSString *lockscreenIdentifier = nil;
 static NSString *applicationIdentifier = nil;
 static _UIBackdropView *background = nil;
 static int headerStyle = 2060;
-static bool logging, hideKeyboard, selectall, resize_header = false;
+static bool logging, hideKeyboard, selectall, resize_header, replace_nc = false;
 static bool force_rotation = true;
 
 static NSMutableArray *indexValues = nil;
@@ -28,12 +28,166 @@ static SBRootFolderView *fv = nil;
 static SBRootFolderController *fvd = nil;
 static UIView *gesTargetview = nil;
 
+%hook SBNotificationCenterViewController
+-(void)presentGrabberView {
+	if(!replace_nc) %orig;
+}
+%end
+
+%hook SBNotificationCenterController
+-(void)beginPresentationWithTouchLocation:(CGPoint)arg1 {
+	%log;
+	if(!replace_nc) { %orig; } else {
+		[[%c(SBSearchViewController) sharedInstance] createToShow];
+		[[%c(SBSearchGesture) sharedInstance] revealAnimated:YES];
+	}
+}
+
+-(void)updateTransitionWithTouchLocation:(CGPoint)arg1 velocity:(CGPoint)arg2 {
+	%log;
+	if(!replace_nc) { %orig; } else {
+		// double screenHeight = CGRectGetHeight([UIScreen mainScreen].bounds);
+		// //double screenHeight = [UIScreen mainScreen].bounds.size.height;
+		// CGFloat y = arg1.y;
+		// double ans = y/screenHeight;
+		// NSLog(@"screen height = %f",screenHeight);
+		// NSLog(@"y = %f",y);
+		// NSLog(@"y/screenheight = %f",ans);
+		// [[%c(SBSearchViewController) sharedInstance] searchGesture:[%c(SBSearchGesture) sharedInstance] changedPercentComplete:ans];
+	}
+}
+
+%end
+
+
 %hook SBSearchViewController
 
 // -(void)_updateCellClipping:(id)arg1 {
 // 	%log;
 // 	%orig;
 // }
+-(void)scrollViewDidScroll:(id)arg1 { %log; %orig; }
+-(void)scrollViewWillBeginDragging:(id)arg1  { %log; %orig; }
+-(BOOL)gestureRecognizerShouldBegin:(id)arg1 { %log; return %orig; }
+
+
+%new
+-(void)show {
+	vcont = [%c(SBSearchViewController) sharedInstance];
+	UIView *view = MSHookIvar<UIView *>(vcont, "_view");
+	originalWindow = MSHookIvar<UIWindow *>(vcont, "_presentingWindow");
+	NSLog(@"presenting Window = %@", originalWindow);
+	UIViewController *vc = MSHookIvar<UIViewController *>(vcont, "_mainViewController");
+	NSLog(@"main View Controller = %@",vc);
+	SBSearchGesture *ges = [%c(SBSearchGesture) sharedInstance];
+	if(!gesTargetview)	gesTargetview = MSHookIvar<SBIconScrollView *>(ges, "_targetView");
+
+
+	NSLog(@"AnySpot: keyWindow root view Controller = %@",[[UIApplication sharedApplication] keyWindow].rootViewController);
+	NSLog(@"AnySpot: keyWindow delegate = %@",[[[UIApplication sharedApplication] keyWindow] delegate]);
+
+	if ([[view superview] isKindOfClass:[%c(SBRootFolderView) class]]) {
+		fv = [(SBRootFolderView *)[view superview] retain];
+		if([[fv delegate] isKindOfClass:[%c(SBRootFolderController) class]]) 
+			fvd = [[fv delegate] retain];
+	}
+
+
+	if([vcont isVisible]) {
+		[ges resetAnimated:YES];
+	} else if ([(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked]) {
+		[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentModalViewController:vcont animated:YES];
+		[ges revealAnimated:YES];
+	}else {
+		[[%c(SBSearchViewController) sharedInstance] forceRotation];
+
+
+		window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+
+
+		UIStatusBar *status = [(SpringBoard *)[%c(SpringBoard) sharedApplication] statusBar];
+		NSLog(@"statusbar = %f",((UIWindow *)[status statusBarWindow]).windowLevel);
+		NSLog(@"statusbar.windowLevel %f",UIWindowLevelStatusBar);
+		window.windowLevel = UIWindowLevelStatusBar - 5; //one less than the statusbar
+
+
+		 window.rootViewController = vcont;
+
+        [window setRootViewController:vcont];
+			
+		[window setDelegate:vcont];
+		[window setContentView:view];
+		[window makeKeyAndVisible];
+		//[window makeKeyAndOrderFront:nil];
+		[ges setTargetView:window];
+		// [ges updateForRotation];
+		[[%c(SBSearchViewController) sharedInstance] forceRotation];
+
+
+		[ges revealAnimated:YES];
+	}
+}
+
+
+%new
+-(void)createToShow {
+	vcont = [%c(SBSearchViewController) sharedInstance];
+	UIView *view = MSHookIvar<UIView *>(vcont, "_view");
+	originalWindow = MSHookIvar<UIWindow *>(vcont, "_presentingWindow");
+	NSLog(@"presenting Window = %@", originalWindow);
+	UIViewController *vc = MSHookIvar<UIViewController *>(vcont, "_mainViewController");
+	NSLog(@"main View Controller = %@",vc);
+	SBSearchGesture *ges = [%c(SBSearchGesture) sharedInstance];
+	if(!gesTargetview)	gesTargetview = MSHookIvar<SBIconScrollView *>(ges, "_targetView");
+
+
+	NSLog(@"AnySpot: keyWindow root view Controller = %@",[[UIApplication sharedApplication] keyWindow].rootViewController);
+	NSLog(@"AnySpot: keyWindow delegate = %@",[[[UIApplication sharedApplication] keyWindow] delegate]);
+
+	if ([[view superview] isKindOfClass:[%c(SBRootFolderView) class]]) {
+		fv = [(SBRootFolderView *)[view superview] retain];
+		if([[fv delegate] isKindOfClass:[%c(SBRootFolderController) class]]) 
+			fvd = [[fv delegate] retain];
+	}
+
+
+	if([vcont isVisible]) {
+		[ges resetAnimated:YES];
+	} else if ([(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked]) {
+		[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentModalViewController:vcont animated:YES];
+		//[ges revealAnimated:YES];
+	}else {
+		[[%c(SBSearchViewController) sharedInstance] forceRotation];
+
+
+		window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+
+
+		UIStatusBar *status = [(SpringBoard *)[%c(SpringBoard) sharedApplication] statusBar];
+		NSLog(@"statusbar = %f",((UIWindow *)[status statusBarWindow]).windowLevel);
+		NSLog(@"statusbar.windowLevel %f",UIWindowLevelStatusBar);
+		window.windowLevel = UIWindowLevelStatusBar - 5; //one less than the statusbar
+
+
+		 window.rootViewController = vcont;
+
+        [window setRootViewController:vcont];
+			
+		[window setDelegate:vcont];
+		[window setContentView:view];
+		[window makeKeyAndVisible];
+		//[window makeKeyAndOrderFront:nil];
+		[ges setTargetView:window];
+		// [ges updateForRotation];
+		[[%c(SBSearchViewController) sharedInstance] forceRotation];
+
+		//[ges revealAnimated:YES];
+		
+		
+	}
+}
+
+
 %new
 -(void)forceRotation {
 	if(force_rotation) {
@@ -200,19 +354,21 @@ static UIView *gesTargetview = nil;
 }
 
 -(void)searchGesture:(id)arg1 changedPercentComplete:(double)arg2 {
+	if(logging) %log;
 	%orig;
 	//[[%c(SBSearchViewController) sharedInstance] repositionCells];
 }
 
 -(void)searchGesture:(id)arg1 completedShowing:(BOOL)arg2  {
+	if(logging) %log;
 	%orig;
-	%log;
 	if(arg2) {
 		[[%c(SBSearchViewController) sharedInstance] forceRotation];
 		UINavigationController *nav = MSHookIvar<UINavigationController *>([%c(SBSearchViewController) sharedInstance], "_navigationController");
 		if(nav.view.frame.origin.y == 10) {
 			[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:YES withPushDown:20];
 		}
+		[[%c(SBSearchViewController) sharedInstance] _setShowingKeyboard:YES];	
 		//[[%c(SBSearchViewController) sharedInstance] repositionCells];
 	}
 }
@@ -599,6 +755,8 @@ static void loadPrefs() {
 	force_rotation = [settings objectForKey:@"rotation_enabled"] ? [[settings objectForKey:@"rotation_enabled"] boolValue] : YES;
 
 	resize_header = [settings objectForKey:@"resize_header_enabled"] ? [[settings objectForKey:@"resize_header_enabled"] boolValue] : NO;
+	
+	replace_nc = [settings objectForKey:@"nc_replace_enabled"] ? [[settings objectForKey:@"nc_replace_enabled"] boolValue] : NO;
 
 
 	enabledSections = [settings objectForKey:@"enabledSections"] ?: @[]; [enabledSections retain];
@@ -844,85 +1002,21 @@ static void loadPrefs() {
 %end
 
 
-@interface LAActivator
--(id)hasSeenListenerWithName:(id)arg1;
--(id)assignEvent:(id)arg1 toListenerWithName:(id)arg2;
--(id)registerListener:(id)arg1 forName:(id)arg2;
-@end
 
-@interface LAEvent
-+(id)eventWithName:(id)arg1; 
--(void)setHandled:(BOOL)arg1;
-@property (nonatomic, readonly) NSString *name;
-@property (nonatomic, readonly) NSString *mode;
-@property (nonatomic, getter=isHandled) BOOL handled;
-@property (nonatomic, copy) NSDictionary *userInfo;
-@end
-
-@interface SearchLightActivator : NSObject <LAListener>
-@end
 
 
 
 @implementation SearchLightActivator
 - (void)activator:(id)activator receiveEvent:(LAEvent *)event {
 	NSLog(@"event = %@",event);
-	vcont = [%c(SBSearchViewController) sharedInstance];
-	UIView *view = MSHookIvar<UIView *>(vcont, "_view");
-	originalWindow = MSHookIvar<UIWindow *>(vcont, "_presentingWindow");
-	NSLog(@"presenting Window = %@", originalWindow);
-	UIViewController *vc = MSHookIvar<UIViewController *>(vcont, "_mainViewController");
-	NSLog(@"main View Controller = %@",vc);
-	SBSearchGesture *ges = [%c(SBSearchGesture) sharedInstance];
-	if(!gesTargetview)	gesTargetview = MSHookIvar<SBIconScrollView *>(ges, "_targetView");
 
-
-	NSLog(@"AnySpot: keyWindow root view Controller = %@",[[UIApplication sharedApplication] keyWindow].rootViewController);
-	NSLog(@"AnySpot: keyWindow delegate = %@",[[[UIApplication sharedApplication] keyWindow] delegate]);
-
-	if ([[view superview] isKindOfClass:[%c(SBRootFolderView) class]]) {
-		fv = [(SBRootFolderView *)[view superview] retain];
-		if([[fv delegate] isKindOfClass:[%c(SBRootFolderController) class]]) 
-			fvd = [[fv delegate] retain];
+	if([[%c(SBSearchViewController) sharedInstance] isVisible]) {
+		[[%c(SBSearchGesture) sharedInstance] resetAnimated:YES];
+	} else {
+		[[%c(SBSearchViewController) sharedInstance] createToShow];
+		[[%c(SBSearchGesture) sharedInstance] revealAnimated:YES];
 	}
 
-	if([vcont isVisible]) {
-
-		[ges resetAnimated:YES];
-	} else if ([(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked]) {
-		[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentModalViewController:vcont animated:YES];
-		[ges revealAnimated:YES];
-	}else {
-		[[%c(SBSearchViewController) sharedInstance] forceRotation];
-
-
-		window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-
-
-		UIStatusBar *status = [(SpringBoard *)[%c(SpringBoard) sharedApplication] statusBar];
-		NSLog(@"statusbar = %f",((UIWindow *)[status statusBarWindow]).windowLevel);
-		NSLog(@"statusbar.windowLevel %f",UIWindowLevelStatusBar);
-		window.windowLevel = UIWindowLevelStatusBar - 5; //one less than the statusbar
-
-
-		 window.rootViewController = vcont;
-
-        [window setRootViewController:vcont];
-			
-		[window setDelegate:vcont];
-		[window setContentView:view];
-		[window makeKeyAndVisible];
-		//[window makeKeyAndOrderFront:nil];
-		[ges setTargetView:window];
-		// [ges updateForRotation];
-			[[%c(SBSearchViewController) sharedInstance] forceRotation];
-
-
-		[ges revealAnimated:YES];
-		
-		
-	}
-	
 	[event setHandled:YES];
 
 }
@@ -963,6 +1057,8 @@ static void loadPrefs() {
 
 
 %hook SBSearchGesture
+
+
 -(void)revealAnimated:(BOOL)arg1 {
 	%orig;
 	%log;

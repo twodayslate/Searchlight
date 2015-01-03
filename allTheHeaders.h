@@ -5,6 +5,7 @@
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
 #import <QuartzCore/QuartzCore.h>
+#import <CoreGraphics/CoreGraphics.h>
 
 @interface AnySpotSwitch : NSObject <FSSwitchDataSource>
 @end
@@ -47,6 +48,8 @@
 -(void)repositionCells;
 -(void)forceRotation;
 -(void)setHeaderbyChangingFrame:(bool)changeFrame withPushDown:(int)pushDown;
+-(void)show;
+-(void)createToShow;
 @end
 
 @interface SBSearchHeader : UIView
@@ -296,4 +299,33 @@
 -(id)initWithReuseIdentifier:(id)arg1 ;
 -(id)separatorView;
 -(id)recursiveDescription;
+@end
+
+@interface SBNotificationCenterViewController : UIViewController
+-(void)presentGrabberView;
+@end
+
+@interface SBNotificationCenterController
+-(void)beginPresentationWithTouchLocation:(CGPoint)arg1 ;
+-(void)presentAnimated:(BOOL)arg1 ;
+
+@end
+
+
+@interface LAActivator
+-(id)hasSeenListenerWithName:(id)arg1;
+-(id)assignEvent:(id)arg1 toListenerWithName:(id)arg2;
+-(id)registerListener:(id)arg1 forName:(id)arg2;
+@end
+
+@interface LAEvent
++(id)eventWithName:(id)arg1; 
+-(void)setHandled:(BOOL)arg1;
+@property (nonatomic, readonly) NSString *name;
+@property (nonatomic, readonly) NSString *mode;
+@property (nonatomic, getter=isHandled) BOOL handled;
+@property (nonatomic, copy) NSDictionary *userInfo;
+@end
+
+@interface SearchLightActivator : NSObject <LAListener>
 @end

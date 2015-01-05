@@ -253,7 +253,7 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 		NSLog(@"Activator not installed. Class not found! Do something here!");
 		UIAlertController *alertController = [UIAlertController
                               alertControllerWithTitle:@"libactivator missing!"
-                              message:@"The libactivator package is missing. Please install it if you would like to assign an activator event to Searchlight."
+                              message:@"The libactivator package is missing. Please install it if you would like to assign an Activator event to Searchlight."
                               preferredStyle:UIAlertControllerStyleAlert];
 		UIAlertAction *cancelAction = [UIAlertAction 
             actionWithTitle:NSLocalizedString(@"Cancel", @"Cancel action")

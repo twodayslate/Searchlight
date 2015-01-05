@@ -30,6 +30,7 @@
 -(void)cancelButtonPressed;
 -(void)searchGesture:(id)arg1 completedShowing:(BOOL)arg2 ;
 -(void)_setShowingKeyboard:(BOOL)arg1 ;
+-(BOOL)_showingKeyboard;
 -(void)_resetViewController;
 -(id)_window;
 -(void)_fadeForLaunchWithDuration:(double)arg1 completion:(/*^block*/ id)arg2 ;

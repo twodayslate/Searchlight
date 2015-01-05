@@ -368,25 +368,27 @@ static UIView *gesTargetview = nil;
 		if(nav.view.frame.origin.y == 10) {
 			[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:YES withPushDown:20];
 		}
-		[[%c(SBSearchViewController) sharedInstance] _setShowingKeyboard:YES];	
+		if(![[%c(SBSearchViewController) sharedInstance] _showingKeyboard] && !hideKeyboard) {
+			[[%c(SBSearchViewController) sharedInstance] _setShowingKeyboard:YES];	
+		}
 		//[[%c(SBSearchViewController) sharedInstance] repositionCells];
 	}
 }
 
-// -(void)_setShowingKeyboard:(BOOL)arg1 {
-// 	if(arg1 && hideKeyboard) {
-// 		return;
-// 	}
+-(void)_setShowingKeyboard:(BOOL)arg1 {
+	if(arg1 && hideKeyboard) {
+		return;
+	}
 
-// 	%orig;
+	%orig;
 
-// 	if(arg1 && selectall) {
-// 		SBSearchHeader *sheader = MSHookIvar<SBSearchHeader *>(self, "_searchHeader");
-// 		if(![[sheader searchField].text isEqual:@""]) {
-// 			[[sheader searchField] selectAll:self];
-// 		}
-// 	}
-// }
+	// if(arg1 && selectall) {
+	// 	SBSearchHeader *sheader = MSHookIvar<SBSearchHeader *>(self, "_searchHeader");
+	// 	if(![[sheader searchField].text isEqual:@""]) {
+	// 		[[sheader searchField] selectAll:self];
+	// 	}
+	// }
+}
 
 -(int)tableView:(UITableView *)arg1 numberOfRowsInSection:(int)arg2 {
 	if(logging) %log;
@@ -457,21 +459,15 @@ static UIView *gesTargetview = nil;
 
 -(id)tableView:(UITableView *)arg1 cellForRowAtIndexPath:(NSIndexPath *)arg2 {
 	if(logging) %log;
-	NSLog(@"before this line :)");
 	if(arg2.row > [listLauncherDisplayIdentifiers count]-1) { return %orig; } // fix for SpotDefine
-	NSLog(@"after this line :)");
 	if([self shouldDisplayListLauncher]) {
-		NSLog(@"inside listlauncher stuff");
 		NSString *identifier = [@"" retain];
 
 		if([[enabledSections objectAtIndex:arg2.section] isEqual:@"Application List"]) {
-			NSLog(@"attemtping for applist");
 			identifier = [listLauncherDisplayIdentifiers objectAtIndex:arg2.row];
 		} else if([[enabledSections objectAtIndex:arg2.section] isEqual:@"Favorites"]) {
-			NSLog(@"attemtping for favs");
 			identifier = [favoritesDisplayIdentifiers objectAtIndex:arg2.row];
 		} else if([[enabledSections objectAtIndex:arg2.section] isEqual:@"Recent"]) {
-			NSLog(@"attemtping for recent");
 			identifier = [recentApplications objectAtIndex:arg2.row];
 		}
 
@@ -495,42 +491,81 @@ static UIView *gesTargetview = nil;
 			// textLabelFrame.size.width += 5;
 			// cell.textLabel.frame = textLabelFrame;
 			// [cell setNeedsLayout];
-
-			// Instead of doing this... can make a custom cell and do this: http://stackoverflow.com/a/4209039/193772
-			//UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(64.0f, 14.0f, 150.0f, 20.0f)];
 			UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(48.0f, 3.0f, 150.0f, 20.0f)];
 			lbl.text = name;
 			lbl.tag = 666;
 			lbl.textColor = [UIColor whiteColor];
 			[cell.leftView addSubview:lbl];
-			
-			//UIImageView *imgView = [[UIImageView alloc] initWithFrame:CGRectMake(15.5f, 3.5f, 41.5f, 41.5f)];
+
 			UIImageView *imgView = [[UIImageView alloc] initWithFrame:CGRectMake(-1.0f, -8.0f, 41.5f, 41.5f)];
 			imgView.tag = 667;
 			[cell.leftView addSubview:imgView];
+			// Instead of doing this... can make a custom cell and do this: http://stackoverflow.com/a/4209039/193772
+			//UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(64.0f, 14.0f, 150.0f, 20.0f)];
+			
 
 		}
-		 [cell updateLabel:cell.titleLabel withValue:@" "];
+
+			
+			//UIImageView *imgView = [[UIImageView alloc] initWithFrame:CGRectMake(15.5f, 3.5f, 41.5f, 41.5f)];
+		CGRect cellFrame = cell.frame;
+		cellFrame.size.height = 20;
+		cell.frame = cellFrame;
+
+		CGRect labelFrame = cell.titleLabel.frame;
+		labelFrame.origin.y = 10.0f;
+		cell.titleLabel.frame = labelFrame;
+
+		[cell updateLabel:cell.titleLabel withValue:@" "];
 		//cell.titleLabel.text = name;
 		//cell.textLabel.text = name;
 		UILabel *lbl = (UILabel *)[cell.leftView viewWithTag:666];
     	[lbl setText:name];
+  //   	NSLog(@"systom font size = %f",[UIFont systemFontSize]);
+  //   	NSLog(@"label font size = %f",lbl.font.pointSize);
+  //   	NSLog(@"titleLabel font size = %f",cell.titleLabel.font.pointSize);
+		[lbl setFont:[UIFont systemFontOfSize:cell.titleLabel.font.pointSize]];
+		//default = 17
 
     	UIImageView *imgView = (UIImageView *)[cell.leftView viewWithTag:667];
 
-    	CGRect rect = CGRectMake(0,0,35,35);
+    	CGRect rect = CGRectMake(0,0,26,26);
     	UIGraphicsBeginImageContextWithOptions(rect.size, NO, 0.0);
     	// CGContextRef context = UIGraphicsGetCurrentContext();
     	// CGContextSetInterpolationQuality(context, kCGInterpolationHigh);
-	    UIImage *icon = [applicationList iconOfSize:40 forDisplayIdentifier:identifier];
-	 //    //cell.titleImageView.image = icon; 
+	    UIImage *icon = [applicationList iconOfSize:12 forDisplayIdentifier:identifier];
+	 	//cell.titleImageView.image = icon; 
 		//cell.imageView.image = icon;
 	    [icon drawInRect:rect];
 	    UIImage *img = UIGraphicsGetImageFromCurrentImageContext();
 	    UIGraphicsEndImageContext();
 
-    	imgView.image = img;
+	    UIImageView *actualimgView = MSHookIvar<UIImageView *>(cell, "_titleImageView");
+	    actualimgView.frame = CGRectMake(-1.0f, -8.0f, 41.5f, 41.5f);
+    	actualimgView.image = img;
 
+	    rect = CGRectMake(0,0,35,35);
+    	UIGraphicsBeginImageContextWithOptions(rect.size, NO, 0.0);
+    	// CGContextRef context = UIGraphicsGetCurrentContext();
+    	// CGContextSetInterpolationQuality(context, kCGInterpolationHigh);
+	    icon = [applicationList iconOfSize:49 forDisplayIdentifier:identifier];
+	 	//cell.titleImageView.image = icon; 
+		//cell.imageView.image = icon;
+	    [icon drawInRect:rect];
+	    img = UIGraphicsGetImageFromCurrentImageContext();
+	    UIGraphicsEndImageContext();
+
+	    imgView.image = img;
+
+	    
+
+    	[cell clipToTopHeaderWithHeight:66.0f inTableView:arg1];
+
+    	NSLog(@"image frame = %@", NSStringFromCGRect(imgView.frame));
+    	NSLog(@"cell frame = %@",NSStringFromCGRect(cell.frame));
+    	NSLog(@"label frame = %@",NSStringFromCGRect(cell.titleLabel.frame));
+    	NSLog(@"constantConstraints = %@",cell.constantConstraints);
+    	NSLog(@"variableConstraints = %@",cell.variableConstraints);
 		return cell;
 	}
 
@@ -539,8 +574,6 @@ static UIView *gesTargetview = nil;
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
 	if(logging) %log;
-
-
 
     if ([self shouldDisplayListLauncher]) {
     	[self dismiss];
@@ -804,6 +837,13 @@ static void loadPrefs() {
 -(void)appsRemoved:(id)arg1 added:(id)arg2 {
 	%orig;
 	recentApplications = [[self snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] retain];
+	SBSearchViewController *sview = [%c(SBSearchViewController) sharedInstance];
+	//[sview _updateTableContents];
+	UITableView *stable = MSHookIvar<UITableView *>(sview, "_tableView");
+	stable.sectionIndexColor = [UIColor whiteColor]; // text color
+	stable.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
+	stable.sectionIndexBackgroundColor = [UIColor clearColor]; //bg
+	[stable reloadData];
 }
 -(void)remove:(id)arg1 {
 	%orig;
@@ -1119,7 +1159,6 @@ static void loadPrefs() {
 	}
 	applicationIdentifier = nil;
 	
-
 }
 %end
 

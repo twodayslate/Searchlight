@@ -30,13 +30,21 @@
             <key>cell</key>
             <string>PSLinkCell</string>
             <key>label</key>
-            <string>Appearance &amp; Behavior</string>
-            <key>icon</key>
-			<string>appearance.png</string>
+            <string>Appearance</string>
 			<key>detail</key>
 			<string>LLAppearanceController</string>
-
-
+			<key>isController</key>
+			<string>1</string>
+			<key>icon</key>
+			<string>paint.png</string>
+        </dict>
+        <dict>
+            <key>cell</key>
+            <string>PSLinkCell</string>
+            <key>label</key>
+            <string>Behavior</string>
+			<key>detail</key>
+			<string>LLBehaviorController</string>
 			<key>isController</key>
 			<string>1</string>
 			<key>icon</key>

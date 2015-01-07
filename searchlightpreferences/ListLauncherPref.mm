@@ -63,14 +63,14 @@ static NSString *plistPath = @"/var/mobile/Library/Preferences/org.thebigboss.se
 				[firstSpecifier setProperty:@"Applications.png" forKey:@"icon"];
 			}
 
-			[_specifiers insertObject:firstSpecifier atIndex:4];
+			[_specifiers insertObject:firstSpecifier atIndex:5];
 		}
 		NSLog(@"_specifiers after enabled = %@",_specifiers);
 
 		for(id spec in [[_disabledIdentifiers reverseObjectEnumerator] allObjects]) {
 			NSString *classString = [@"LL" stringByAppendingString:[[[spec componentsSeparatedByString:@" "] objectAtIndex:0] stringByAppendingString:@"Controller"]];
 			PSSpecifier* firstSpecifier = [PSSpecifier preferenceSpecifierNamed:spec target:self set:nil get:nil detail:NSClassFromString(classString) cell:[PSTableCell cellTypeFromString:@"PSLinkCell"] edit:1];
-			[_specifiers insertObject:firstSpecifier atIndex:5+[_enabledIdentifiers count]];
+			[_specifiers insertObject:firstSpecifier atIndex:6+[_enabledIdentifiers count]];
 		}
 
 		NSLog(@"settings = %@",settings);
@@ -219,7 +219,7 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 }
 - (NSInteger) tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
 	NSLog(@"getting number of rows");
-	if(section == 0) return 2; // system search
+	if(section == 0) return 3; // system search
 	if(section == 1) return [_enabledIdentifiers count]; //count of enabled
 	if(section == 2) return [_disabledIdentifiers count]; //count of disabled
 	if(section == 3) return 1; // save
@@ -299,7 +299,7 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 }
 
 -(void)bitcoin {
-	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://coinbase.com/checkouts/59ead722b181591150e7de4ed6769cb4"]];
+	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://www.coinbase.com/checkouts/07509aa1e4bd4d82c7f0b82138b51a3a"]];
 }
 
 -(void)generateAppList {

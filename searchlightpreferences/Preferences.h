@@ -108,6 +108,9 @@
 @interface LLAppearanceController : PSListController
 @end
 
+@interface LLBehaviorController : PSListController
+@end
+
 @interface CreditCellClass : PSTableCell <UITextViewDelegate> { 
 	UITextView *_plainTextView;
 }

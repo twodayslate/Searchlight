@@ -153,7 +153,7 @@
 }
 
 -(void)bitcoin {
-	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://coinbase.com/checkouts/59ead722b181591150e7de4ed6769cb4"]];
+	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://www.coinbase.com/checkouts/07509aa1e4bd4d82c7f0b82138b51a3a"]];
 }
 @end
 
@@ -179,7 +179,7 @@
 	self = [super initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:reuseIdentifier specifier:specifier];
 
 	if (self) {
-		NSString *rawCredits = @"Searchlight, made by @twodayslate, combines the iOS7 tweaks AnySpot and ListLauncher7 into one and then makes Spotlight even better. The original version of ListLauncher (>iOS5) was created by Grant Paul (@chpwn). Developed with permission.  Uses AppList by Ryan Petrich (@rpetrich). Icons from Icons8.com. Settings thanks to @DHowett's preferenceloader. Enjoy!";
+		NSString *rawCredits = @"Searchlight, made by @twodayslate, combines the iOS7 tweaks AnySpot and ListLauncher7 into one and then makes Spotlight even better. The original version of ListLauncher (>iOS5) was created by Grant Paul (@chpwn). Developed with permission.  Uses AppList by Ryan Petrich (@rpetrich). Preference icons from Icons8.com. Tweak icon by Brian Overly. Settings thanks to @DHowett's preferenceloader. Enjoy!";
 
 		CGFloat padding = 5.0, savedHeight = 120.0;
 
@@ -197,6 +197,11 @@
 			[clickable setAttributes:@{ NSLinkAttributeName : [NSURL URLWithString:@"http://zac.gorak.us/"]} range:[clickable.string rangeOfString:@"@twodayslate"]];
 			[clickable setAttributes:@{ NSLinkAttributeName : [NSURL URLWithString:@"http://chpwn.com/"]} range:[clickable.string rangeOfString:@"Grant Paul (@chpwn)"]];
 			[clickable setAttributes:@{ NSLinkAttributeName : [NSURL URLWithString:@"http://rpetri.ch/"]} range:[clickable.string rangeOfString:@"Ryan Petrich (@rpetrich)"]];
+			[clickable setAttributes:@{ NSLinkAttributeName : [NSURL URLWithString:@"http://brianoverly.com/"]} range:[clickable.string rangeOfString:@"Brian Overly"]];
+			[clickable setAttributes:@{ NSLinkAttributeName : [NSURL URLWithString:@"http://icons8.com/"]} range:[clickable.string rangeOfString:@"Icons8.com"]];
+			[clickable setAttributes:@{ NSLinkAttributeName : [NSURL URLWithString:@"https://twitter.com/DHowett/"]} range:[clickable.string rangeOfString:@"@DHowett"]];
+			[clickable setAttributes:@{ NSLinkAttributeName : [NSURL URLWithString:@"http://apt.thebigboss.org/onepackage.php?bundleid=org.thebigboss.anyspot"]} range:[clickable.string rangeOfString:@"AnySpot"]];
+			[clickable setAttributes:@{ NSLinkAttributeName : [NSURL URLWithString:@"http://apt.thebigboss.org/onepackage.php?bundleid=org.thebigboss.listlauncher7"]} range:[clickable.string rangeOfString:@"ListLauncher7"]];
 			_plainTextView.linkTextAttributes = @{ NSForegroundColorAttributeName : [UIColor colorWithRed:68/255.0 green:132/255.0 blue:231/255.0 alpha:1.0] };
 
 		_plainTextView.dataDetectorTypes = UIDataDetectorTypeLink;

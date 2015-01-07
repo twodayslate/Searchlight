@@ -330,3 +330,10 @@
 
 @interface SearchLightActivator : NSObject <LAListener>
 @end
+
+@interface SBApplicationController {
+	NSMutableDictionary* _applicationsByBundleIdentifer;
+}
++(id)sharedInstance;
+-(id)allApplications;
+@end

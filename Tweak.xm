@@ -223,9 +223,11 @@ static UIView *gesTargetview = nil;
 %new
 -(void)setHeaderbyChangingFrame:(bool)changeFrame withPushDown:(int)pushDown {
 	UINavigationController *nav = MSHookIvar<UINavigationController *>([%c(SBSearchViewController) sharedInstance], "_navigationController");
-	NSLog(@"before");
-	NSLog(@"navigation controller view = %@",nav.view);
-	NSLog(@"navigation controller bar = %@",nav.navigationBar);
+	if(logging) {
+		NSLog(@"before");
+		NSLog(@"navigation controller view = %@",nav.view);
+		NSLog(@"navigation controller bar = %@",nav.navigationBar);
+	}
 
 	if(changeFrame && resize_header) {
 		CGRect navframe = nav.navigationBar.frame;
@@ -288,10 +290,13 @@ static UIView *gesTargetview = nil;
 	//[nav.navigationBar addSubview:background];
 	// [nav.navigationBar setBarStyle:UIBarStyleBlack];
 	//[nav.navigationBar _setBarPosition:UIBarPositionTopAttached];
-	NSLog(@"after");
-	NSLog(@"navigation controller view = %@",nav.view);
-	NSLog(@"navigation bar = %@",nav.navigationBar);
-
+	if(logging) {
+		NSLog(@"after");
+		NSLog(@"navigation controller view = %@",nav.view);
+		NSLog(@"navigation bar = %@",nav.navigationBar);
+		NSLog(@"navigation bar frame = %@",NSStringFromCGRect(nav.navigationBar.frame));
+		NSLog(@"nav background frame = %@",NSStringFromCGRect(background.frame));
+	}
 
 	//[[%c(SBSearchViewController) sharedInstance] repositionCells];
 	//[[%c(SBSearchViewController) sharedInstance] _updateHeaderHeightIfNeeded];
@@ -367,6 +372,8 @@ static UIView *gesTargetview = nil;
 		UINavigationController *nav = MSHookIvar<UINavigationController *>([%c(SBSearchViewController) sharedInstance], "_navigationController");
 		if(nav.view.frame.origin.y == 10) {
 			[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:YES withPushDown:20];
+		} else {
+			[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:NO withPushDown:20];
 		}
 		if(![[%c(SBSearchViewController) sharedInstance] _showingKeyboard] && !hideKeyboard) {
 			[[%c(SBSearchViewController) sharedInstance] _setShowingKeyboard:YES];	
@@ -394,17 +401,26 @@ static UIView *gesTargetview = nil;
 	if(logging) %log;
 	if([self shouldDisplayListLauncher]) {
 		NSLog(@"should display");
-		if(enabledSections && [enabledSections count] > arg2)  {
-			if([[enabledSections objectAtIndex:arg2] isEqual:@"Application List"]) {
-				//NSLog(@"will return = %f",(float)[listLauncherDisplayIdentifiers count]);
-				return [listLauncherDisplayIdentifiers count];
-			} else if([[enabledSections objectAtIndex:arg2] isEqual:@"Favorites"]) {
-				return [favoritesDisplayIdentifiers count];
-			} else if([[enabledSections objectAtIndex:arg2] isEqual:@"Recent"]) {
-				if(maxRecent > [recentApplications count]) return [recentApplications count];
-				return maxRecent;
+		@try {
+			if(enabledSections && [enabledSections count] > arg2)  {
+				if([[enabledSections objectAtIndex:arg2] isEqual:@"Application List"]) {
+					if(logging) NSLog(@"inside application list");
+					//NSLog(@"will return = %f",(float)[listLauncherDisplayIdentifiers count]);
+					return [listLauncherDisplayIdentifiers count];
+				} else if([[enabledSections objectAtIndex:arg2] isEqual:@"Favorites"]) {
+					if(logging) NSLog(@"inside fav");
+					return [favoritesDisplayIdentifiers count];
+				} else if([[enabledSections objectAtIndex:arg2] isEqual:@"Recent"]) {
+					if(logging) NSLog(@"inside recent");
+					if(maxRecent > [recentApplications count]) return [recentApplications count];
+					return maxRecent;
+				}
 			}
 		}
+		@finally {
+			return 0;
+		}
+		
 	}
 		
 	arg1.sectionIndexColor = [UIColor whiteColor]; // text color
@@ -463,13 +479,20 @@ static UIView *gesTargetview = nil;
 	if([self shouldDisplayListLauncher]) {
 		NSString *identifier = [@"" retain];
 
-		if([[enabledSections objectAtIndex:arg2.section] isEqual:@"Application List"]) {
-			identifier = [listLauncherDisplayIdentifiers objectAtIndex:arg2.row];
-		} else if([[enabledSections objectAtIndex:arg2.section] isEqual:@"Favorites"]) {
-			identifier = [favoritesDisplayIdentifiers objectAtIndex:arg2.row];
-		} else if([[enabledSections objectAtIndex:arg2.section] isEqual:@"Recent"]) {
-			identifier = [recentApplications objectAtIndex:arg2.row];
+		@try {
+			if([[enabledSections objectAtIndex:arg2.section] isEqual:@"Application List"]) {
+				if(logging) NSLog(@"inside application list");
+				identifier = [listLauncherDisplayIdentifiers objectAtIndex:arg2.row];
+			} else if([[enabledSections objectAtIndex:arg2.section] isEqual:@"Favorites"]) {
+				if(logging) NSLog(@"inside favs");
+				identifier = [favoritesDisplayIdentifiers objectAtIndex:arg2.row];
+			} else if([[enabledSections objectAtIndex:arg2.section] isEqual:@"Recent"]) {
+				if(logging) NSLog(@"inside recent");
+				identifier = [recentApplications objectAtIndex:arg2.row];
+			}
 		}
+		@finally { identifier = @"com.apple.Preferences"; }
+		
 
 		NSString *name = [applicationList valueForKey:@"displayName" forDisplayIdentifier:identifier];
 
@@ -585,6 +608,7 @@ static UIView *gesTargetview = nil;
 		} else if([[enabledSections objectAtIndex:indexPath.section] isEqual:@"Favorites"]) {
 			identifier = [favoritesDisplayIdentifiers objectAtIndex:indexPath.row];
 		} else if([[enabledSections objectAtIndex:indexPath.section] isEqual:@"Recent"]) {
+			if(logging) NSLog(@"inside recent");
 			identifier = [recentApplications objectAtIndex:indexPath.row];
 		}
 
@@ -826,50 +850,61 @@ static void loadPrefs() {
 
 
 	SBAppSwitcherModel *switcherModel = [%c(SBAppSwitcherModel) sharedInstance];
-	recentApplications = [[switcherModel snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] retain];
+	recentApplications = [[[switcherModel snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] mutableCopy] retain];
+	//recentApplications = [[[NSMutableArray alloc] initWithArray:[switcherModel snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] copyItems:YES] autorelease];
 
-	NSLog(@"recent apps = %@", recentApplications);
+	//NSLog(@"all applications = %@",[[%c(SBApplicationController) sharedInstance] allApplications]);
+	//NSMutableDictionary *appdic = MSHookIvar<NSMutableDictionary *>([%c(SBApplicationController) sharedInstance], "_applicationsByBundleIdentifer");
+	//NSLog(@"applciation dictionary = %@",appdic);
+	//NSLog(@"recent apps = %@", recentApplications);
+	NSLog(@"snapshot = %@",[[%c(SBAppSwitcherModel) sharedInstance] snapshot]);
+	NSLog(@"class of snapshot = %@",[[[%c(SBAppSwitcherModel) sharedInstance] snapshot] class]);
+	//dictionary of "<SBDisplayLayout: 0x170838540> {\n    SBDisplayLayoutDisplayItemsPlistKey =     (\n                {\n            SBDisplayItemDisplayIdentifierPlistKey = \"com.apple.Preferences\";\n            SBDisplayItemTypePlistKey = App;\n        }\n    );\n    SBDisplayLayoutSizePlistKey =     (\n        0\n    );\n}",
+
 
 	if(logging) NSLog(@"Done with settings");
 }
 
 %hook SBAppSwitcherModel
 -(void)appsRemoved:(id)arg1 added:(id)arg2 {
+	if(logging) %log;
 	%orig;
-	recentApplications = [[self snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] retain];
+	if(logging) NSLog(@"done with orig");
+	recentApplications = [[[self snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] mutableCopy] retain];
+	//recentApplications = [[[NSMutableArray alloc] initWithArray:[self snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] copyItems:YES] autorelease];
+
 	SBSearchViewController *sview = [%c(SBSearchViewController) sharedInstance];
 	//[sview _updateTableContents];
 	UITableView *stable = MSHookIvar<UITableView *>(sview, "_tableView");
-	stable.sectionIndexColor = [UIColor whiteColor]; // text color
-	stable.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
-	stable.sectionIndexBackgroundColor = [UIColor clearColor]; //bg
 	[stable reloadData];
 }
 -(void)remove:(id)arg1 {
+	if(logging) %log;
 	%orig;
-	recentApplications = [[self snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] retain];
+	if(logging) NSLog(@"done with orig");
+	recentApplications = [[[self snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] mutableCopy] retain];
+	//recentApplications = [[[NSMutableArray alloc] initWithArray:[self snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] copyItems:YES] autorelease];
 	SBSearchViewController *sview = [%c(SBSearchViewController) sharedInstance];
 	//[sview _updateTableContents];
 	UITableView *stable = MSHookIvar<UITableView *>(sview, "_tableView");
-	stable.sectionIndexColor = [UIColor whiteColor]; // text color
-	stable.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
-	stable.sectionIndexBackgroundColor = [UIColor clearColor]; //bg
 	[stable reloadData];
 }
 -(void)removeDisplayItem:(id)arg1  {
+	if(logging) %log;
 	%orig;
-	recentApplications = [[self snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] retain];
+	if(logging) NSLog(@"done with orig");
+	recentApplications = [[[self snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] mutableCopy] retain];
+	//recentApplications = [[[NSMutableArray alloc] initWithArray:[self snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] copyItems:YES] autorelease];
 	SBSearchViewController *sview = [%c(SBSearchViewController) sharedInstance];
 	//[sview _updateTableContents];
 	UITableView *stable = MSHookIvar<UITableView *>(sview, "_tableView");
-	stable.sectionIndexColor = [UIColor whiteColor]; // text color
-	stable.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
-	stable.sectionIndexBackgroundColor = [UIColor clearColor]; //bg
 	[stable reloadData];
 }
 -(void)addToFront:(id)arg1 {
-		%orig;
-	recentApplications = [[self snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] retain];
+	if(logging) %log;
+	%orig;
+	recentApplications = [[[self snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] mutableCopy] retain];
+	//recentApplications = [[[NSMutableArray alloc] initWithArray:[self snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] copyItems:YES] autorelease];
 	SBSearchViewController *sview = [%c(SBSearchViewController) sharedInstance];
 	//[sview _updateTableContents];
 	UITableView *stable = MSHookIvar<UITableView *>(sview, "_tableView");
@@ -1071,6 +1106,10 @@ static void loadPrefs() {
 	return [NSNumber numberWithBool:YES]; // HAX so it can send raw events. <3 rpetrich
 }
 
+- (NSArray *)activator:(LAActivator *)activator requiresCompatibleEventModesForListenerWithName:(NSString *)listenerName {
+	return [NSArray arrayWithObjects:@"springboard", @"lockscreen", @"application", nil];
+}
+
 @end
 
 %hook SBSearchViewController
@@ -1112,16 +1151,23 @@ static void loadPrefs() {
 }
 -(void)resetAnimated:(BOOL)arg1 {
 	
+	if(logging) %log;
 	UIViewController *vc = MSHookIvar<UIViewController *>([%c(SBSearchViewController) sharedInstance], "_mainViewController");
-	NSLog(@"main View Controller = %@",vc);
+	
 	originalWindow = MSHookIvar<UIWindow *>([%c(SBSearchViewController) sharedInstance], "_presentingWindow");
-	NSLog(@"presenting Window = %@", originalWindow);
+	
 	UINavigationController *nc = MSHookIvar<UINavigationController *>([%c(SBSearchViewController) sharedInstance], "_navigationController");
-	NSLog(@"main Nav Controller = %@",nc);
-	NSLog(@"vcont's window = %@",vcont.window);
-	NSLog(@"main view controller's window = %@",vc.window);
+	
+	if(logging) {
+		NSLog(@"main View Controller = %@",vc);
+		NSLog(@"presenting Window = %@", originalWindow);
+		NSLog(@"main Nav Controller = %@",nc);
+		NSLog(@"vcont's window = %@",vcont.window);
+		NSLog(@"main view controller's window = %@",vc.window);
+	}
+	
 	%orig;
-	%log;
+	
 	// if(oldController) {
 	// 	[[%c(SpringBoard) sharedApplication].keyWindow.rootViewController presentViewController:oldController animated:NO completion:nil];
 	// 	oldController = nil;
@@ -1155,6 +1201,9 @@ static void loadPrefs() {
 	}
 
 	if(applicationIdentifier) {
+		if(logging) {
+			NSLog(@"about to launch = %@",applicationIdentifier);
+		}
 		[[UIApplication sharedApplication] launchApplicationWithIdentifier:applicationIdentifier suspended:NO];
 	}
 	applicationIdentifier = nil;

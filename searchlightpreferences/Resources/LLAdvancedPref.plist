@@ -57,6 +57,8 @@
 			<string>PSGroupCell</string>
 			<key>label</key>
 			<string>Resize Header</string>
+			<key>footerText</key>
+			<string>Experimental. Adds the statusbar when launched in an application.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -71,92 +73,10 @@
 			<string>Enabled</string>
 			<key>PostNotification</key>
 			<string>org.thebigboss.searchlight/settingschanged</string>
+
 		</dict>
 
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>label</key>
-			<string>Replace Notification Center Gesture</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<false/>
-			<key>defaults</key>
-			<string>org.thebigboss.searchlight</string>
-			<key>key</key>
-			<string>nc_replace_enabled</string>
-			<key>label</key>
-			<string>Enabled</string>
-			<key>PostNotification</key>
-			<string>org.thebigboss.searchlight/settingschanged</string>
-		</dict>
-
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>label</key>
-			<string>Disable Keyboard on Launch</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<false/>
-			<key>defaults</key>
-			<string>org.thebigboss.searchlight</string>
-			<key>key</key>
-			<string>hide_keyboard</string>
-			<key>label</key>
-			<string>Enabled</string>
-			<key>PostNotification</key>
-			<string>org.thebigboss.searchlight/settingschanged</string>
-		</dict>
-
-
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>label</key>
-			<string>Force Rotation</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<true/>
-			<key>defaults</key>
-			<string>org.thebigboss.searchlight</string>
-			<key>key</key>
-			<string>rotation_enabled</string>
-			<key>label</key>
-			<string>Enabled</string>
-			<key>PostNotification</key>
-			<string>org.thebigboss.searchlight/settingschanged</string>
-		</dict>
-
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>label</key>
-			<string>Logging</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<false/>
-			<key>defaults</key>
-			<string>org.thebigboss.searchlight</string>
-			<key>key</key>
-			<string>logging_enabled</string>
-			<key>label</key>
-			<string>Enabled</string>
-			<key>PostNotification</key>
-			<string>org.thebigboss.searchlight/settingschanged</string>
-		</dict>
+		
 
 
 
@@ -222,6 +142,6 @@
 		</dict> -->
 	</array>
 	<key>title</key>
-	<string>Appearance &amp; Behavior</string>
+	<string>Appearance</string>
 </dict>
 </plist>

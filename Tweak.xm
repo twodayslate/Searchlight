@@ -417,7 +417,8 @@ static UIView *gesTargetview = nil;
 				}
 			}
 		}
-		@finally {
+		@catch (NSException * e) {
+			NSLog(@"error! = %@",e);
 			return 0;
 		}
 		
@@ -491,7 +492,10 @@ static UIView *gesTargetview = nil;
 				identifier = [recentApplications objectAtIndex:arg2.row];
 			}
 		}
-		@finally { identifier = @"com.apple.Preferences"; }
+		@catch (NSException * e) { 
+			NSLog(@"error! %@",e); 
+			identifier = @"com.apple.Preferences"; 
+		}
 		
 
 		NSString *name = [applicationList valueForKey:@"displayName" forDisplayIdentifier:identifier];
@@ -550,7 +554,6 @@ static UIView *gesTargetview = nil;
 		[lbl setFont:[UIFont systemFontOfSize:cell.titleLabel.font.pointSize]];
 		//default = 17
 
-    	UIImageView *imgView = (UIImageView *)[cell.leftView viewWithTag:667];
 
     	CGRect rect = CGRectMake(0,0,26,26);
     	UIGraphicsBeginImageContextWithOptions(rect.size, NO, 0.0);
@@ -566,6 +569,9 @@ static UIView *gesTargetview = nil;
 	    UIImageView *actualimgView = MSHookIvar<UIImageView *>(cell, "_titleImageView");
 	    actualimgView.frame = CGRectMake(-1.0f, -8.0f, 41.5f, 41.5f);
     	actualimgView.image = img;
+
+
+    	UIImageView *imgView = (UIImageView *)[cell.leftView viewWithTag:667];
 
 	    rect = CGRectMake(0,0,35,35);
     	UIGraphicsBeginImageContextWithOptions(rect.size, NO, 0.0);
@@ -593,6 +599,15 @@ static UIView *gesTargetview = nil;
 	}
 
 	return %orig;
+}
+
+-(void)actionManager:(id)arg1 presentViewController:(id)arg2 completion:(/*^block*/id)arg3 modally:(BOOL)arg4 {
+	if(logging) %log;
+	if(window && arg4) {
+		[self presentModalViewController:arg2 animated:YES];
+	} else {
+		%orig;
+	}
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -626,7 +641,9 @@ static UIView *gesTargetview = nil;
 			lockscreenIdentifier = identifier;
 		}
 
-	} else	%orig;
+	} else	{
+		%orig;
+	}
 
 	if ([(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked]) {
 		[[[%c(SBLockScreenManager) sharedInstance] lockScreenViewController] setPasscodeLockVisible:YES animated:YES];
@@ -958,7 +975,7 @@ static void loadPrefs() {
 //}
 -(void)cancelAnimated:(BOOL)arg1 withCompletionBlock:(/*^block*/id)arg2 {
 //Dec  7 16:04:08 Zacs-iPhone SpringBoard[60431] <Warning>: -[<SBSearchResultsAction: 0x171648010> cancelAnimated:1 withCompletionBlock:<__NSMallocBlock__: 0x171648100>]
-	%log;
+	if(logging) %log;
 	NSLog(@"result = %@", [self result]);
 
 	applicationIdentifier = [[self result] url];
@@ -1139,14 +1156,17 @@ static void loadPrefs() {
 
 
 -(void)revealAnimated:(BOOL)arg1 {
+	if(logging) %log;
 	%orig;
-	%log;
-	UIViewController *vc = MSHookIvar<UIViewController *>([%c(SBSearchViewController) sharedInstance], "_mainViewController");
-	NSLog(@"main View Controller = %@",vc);
-	originalWindow = MSHookIvar<UIWindow *>([%c(SBSearchViewController) sharedInstance], "_presentingWindow");
-	NSLog(@"presenting Window = %@", originalWindow);
-	UINavigationController *nc = MSHookIvar<UINavigationController *>([%c(SBSearchViewController) sharedInstance], "_navigationController");
+	applicationIdentifier = nil;
+	if(logging) {
+		UIViewController *vc = MSHookIvar<UIViewController *>([%c(SBSearchViewController) sharedInstance], "_mainViewController");
+		NSLog(@"main View Controller = %@",vc);
+		originalWindow = MSHookIvar<UIWindow *>([%c(SBSearchViewController) sharedInstance], "_presentingWindow");
+		NSLog(@"presenting Window = %@", originalWindow);
+		UINavigationController *nc = MSHookIvar<UINavigationController *>([%c(SBSearchViewController) sharedInstance], "_navigationController");
 	NSLog(@"main Nav Controller = %@",nc);
+	}
 	[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:YES withPushDown:20];
 }
 -(void)resetAnimated:(BOOL)arg1 {
@@ -1204,7 +1224,12 @@ static void loadPrefs() {
 		if(logging) {
 			NSLog(@"about to launch = %@",applicationIdentifier);
 		}
-		[[UIApplication sharedApplication] launchApplicationWithIdentifier:applicationIdentifier suspended:NO];
+		@try {
+			[[UIApplication sharedApplication] launchApplicationWithIdentifier:applicationIdentifier suspended:NO];
+		}
+		@catch (NSException * e) {
+			NSLog(@"error! = %@",e);
+		}
 	}
 	applicationIdentifier = nil;
 	
@@ -1239,6 +1264,7 @@ static void loadPrefs() {
 
 	dlopen("/Library/MobileSubstrate/DynamicLibraries/SpotDefine.dylib", RTLD_NOW);
 	dlopen("/Library/MobileSubstrate/DynamicLibraries/SearchPlus.dylib", RTLD_NOW);
+	dlopen("/Library/MobileSubstrate/DynamicLibraries/SmartSearch.dylib", RTLD_NOW)
     //CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("org.thebigboss.listlauncher7/settingschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
     
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("org.thebigboss.searchlight/saved"), NULL, CFNotificationSuspensionBehaviorCoalesce);

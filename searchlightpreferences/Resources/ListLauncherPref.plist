@@ -36,7 +36,7 @@
 			<key>isController</key>
 			<string>1</string>
 			<key>icon</key>
-			<string>paint.png</string>
+			<string>brush.png</string>
         </dict>
         <dict>
             <key>cell</key>
@@ -48,7 +48,7 @@
 			<key>isController</key>
 			<string>1</string>
 			<key>icon</key>
-			<string>Gear.png</string>
+			<string>settingscog.png</string>
         </dict>
 
 		<dict>

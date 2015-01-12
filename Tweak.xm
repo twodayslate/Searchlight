@@ -15,7 +15,7 @@ static NSString *applicationIdentifier = nil;
 static _UIBackdropView *background = nil;
 static int headerStyle = 2060;
 static bool logging, hideKeyboard, selectall, resize_header, replace_nc = false;
-static bool force_rotation = true;
+static bool force_rotation, ls_enabled = true;
 
 static NSMutableArray *indexValues = nil;
 static NSMutableArray *indexPositions = nil; 
@@ -73,59 +73,8 @@ static UIView *gesTargetview = nil;
 
 %new
 -(void)show {
-	vcont = [%c(SBSearchViewController) sharedInstance];
-	UIView *view = MSHookIvar<UIView *>(vcont, "_view");
-	originalWindow = MSHookIvar<UIWindow *>(vcont, "_presentingWindow");
-	NSLog(@"presenting Window = %@", originalWindow);
-	UIViewController *vc = MSHookIvar<UIViewController *>(vcont, "_mainViewController");
-	NSLog(@"main View Controller = %@",vc);
-	SBSearchGesture *ges = [%c(SBSearchGesture) sharedInstance];
-	if(!gesTargetview)	gesTargetview = MSHookIvar<SBIconScrollView *>(ges, "_targetView");
-
-
-	NSLog(@"AnySpot: keyWindow root view Controller = %@",[[UIApplication sharedApplication] keyWindow].rootViewController);
-	NSLog(@"AnySpot: keyWindow delegate = %@",[[[UIApplication sharedApplication] keyWindow] delegate]);
-
-	if ([[view superview] isKindOfClass:[%c(SBRootFolderView) class]]) {
-		fv = [(SBRootFolderView *)[view superview] retain];
-		if([[fv delegate] isKindOfClass:[%c(SBRootFolderController) class]]) 
-			fvd = [[fv delegate] retain];
-	}
-
-
-	if([vcont isVisible]) {
-		[ges resetAnimated:YES];
-	} else if ([(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked]) {
-		[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentModalViewController:vcont animated:YES];
-		[ges revealAnimated:YES];
-	}else {
-		[[%c(SBSearchViewController) sharedInstance] forceRotation];
-
-
-		window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-
-
-		UIStatusBar *status = [(SpringBoard *)[%c(SpringBoard) sharedApplication] statusBar];
-		NSLog(@"statusbar = %f",((UIWindow *)[status statusBarWindow]).windowLevel);
-		NSLog(@"statusbar.windowLevel %f",UIWindowLevelStatusBar);
-		window.windowLevel = UIWindowLevelStatusBar - 5; //one less than the statusbar
-
-
-		 window.rootViewController = vcont;
-
-        [window setRootViewController:vcont];
-			
-		[window setDelegate:vcont];
-		[window setContentView:view];
-		[window makeKeyAndVisible];
-		//[window makeKeyAndOrderFront:nil];
-		[ges setTargetView:window];
-		// [ges updateForRotation];
-		[[%c(SBSearchViewController) sharedInstance] forceRotation];
-
-
-		[ges revealAnimated:YES];
-	}
+	[self createToShow];
+	[[%c(SBSearchGesture) sharedInstance] revealAnimated:YES];
 }
 
 
@@ -151,12 +100,14 @@ static UIView *gesTargetview = nil;
 	}
 
 
-	if([vcont isVisible]) {
-		[ges resetAnimated:YES];
-	} else if ([(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked]) {
+	if ([(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked] && ls_enabled) {
+		if(logging) NSLog(@"on lockscreen");
 		[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentModalViewController:vcont animated:YES];
-		//[ges revealAnimated:YES];
-	}else {
+	} else if([[%c(SBUIController) sharedInstance] isAppSwitcherShowing]) {
+		if(logging) NSLog(@"switcher is showing");
+		[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentModalViewController:vcont animated:YES];
+	}
+		else {
 		[[%c(SBSearchViewController) sharedInstance] forceRotation];
 
 
@@ -180,10 +131,6 @@ static UIView *gesTargetview = nil;
 		[ges setTargetView:window];
 		// [ges updateForRotation];
 		[[%c(SBSearchViewController) sharedInstance] forceRotation];
-
-		//[ges revealAnimated:YES];
-		
-		
 	}
 }
 
@@ -831,6 +778,8 @@ static void loadPrefs() {
 	resize_header = [settings objectForKey:@"resize_header_enabled"] ? [[settings objectForKey:@"resize_header_enabled"] boolValue] : NO;
 	
 	replace_nc = [settings objectForKey:@"nc_replace_enabled"] ? [[settings objectForKey:@"nc_replace_enabled"] boolValue] : NO;
+	
+	ls_enabled = [settings objectForKey:@"ls_enabled"] ? [[settings objectForKey:@"ls_enabled"] boolValue] : YES;
 
 
 	enabledSections = [settings objectForKey:@"enabledSections"] ?: @[]; [enabledSections retain];
@@ -1104,9 +1053,8 @@ static void loadPrefs() {
 
 	if([[%c(SBSearchViewController) sharedInstance] isVisible]) {
 		[[%c(SBSearchGesture) sharedInstance] resetAnimated:YES];
-	} else {
-		[[%c(SBSearchViewController) sharedInstance] createToShow];
-		[[%c(SBSearchGesture) sharedInstance] revealAnimated:YES];
+	} else if (![(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked] || ([(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked] && ls_enabled)) {
+		[[%c(SBSearchViewController) sharedInstance] show];
 	}
 
 	[event setHandled:YES];
@@ -1168,7 +1116,9 @@ static void loadPrefs() {
 	NSLog(@"main Nav Controller = %@",nc);
 	}
 	[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:YES withPushDown:20];
+	
 }
+
 -(void)resetAnimated:(BOOL)arg1 {
 	
 	if(logging) %log;
@@ -1184,16 +1134,25 @@ static void loadPrefs() {
 		NSLog(@"main Nav Controller = %@",nc);
 		NSLog(@"vcont's window = %@",vcont.window);
 		NSLog(@"main view controller's window = %@",vc.window);
+		NSLog(@"attempting orig");
 	}
 	
-	%orig;
+
+	@try {
+		%orig;
+	}
+	@catch (NSException * e) {
+			NSLog(@"error! = %@",e);
+	}
 	
 	// if(oldController) {
 	// 	[[%c(SpringBoard) sharedApplication].keyWindow.rootViewController presentViewController:oldController animated:NO completion:nil];
 	// 	oldController = nil;
 	// }
 
-	if ([(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked]) {
+	if(logging) NSLog(@"orig complete.");
+
+	if ([(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked] || [[%c(SBUIController) sharedInstance] isAppSwitcherShowing]) {
 		[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController dismissModalViewControllerAnimated:YES];
 		if(gesTargetview) {
 			SBSearchGesture *ges = [%c(SBSearchGesture) sharedInstance];

@@ -165,6 +165,7 @@
 @end
 
 @interface SBUIController
++(id)sharedInstance;
 -(BOOL)isAppSwitcherShowing;
 @end
 

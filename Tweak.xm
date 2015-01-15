@@ -81,13 +81,15 @@ static UIView *gesTargetview = nil;
 %new
 -(void)createToShow {
 	vcont = [%c(SBSearchViewController) sharedInstance];
+
 	UIView *view = MSHookIvar<UIView *>(vcont, "_view");
 	originalWindow = MSHookIvar<UIWindow *>(vcont, "_presentingWindow");
 	NSLog(@"presenting Window = %@", originalWindow);
 	UIViewController *vc = MSHookIvar<UIViewController *>(vcont, "_mainViewController");
 	NSLog(@"main View Controller = %@",vc);
 	SBSearchGesture *ges = [%c(SBSearchGesture) sharedInstance];
-	if(!gesTargetview)	gesTargetview = MSHookIvar<SBIconScrollView *>(ges, "_targetView");
+
+	if(!gesTargetview)	gesTargetview = [MSHookIvar<SBIconScrollView *>(ges, "_targetView") retain];
 
 
 	NSLog(@"AnySpot: keyWindow root view Controller = %@",[[UIApplication sharedApplication] keyWindow].rootViewController);
@@ -99,39 +101,54 @@ static UIView *gesTargetview = nil;
 			fvd = [[fv delegate] retain];
 	}
 
+	if(![[%c(SBSearchViewController) sharedInstance] isVisible] && fv && fvd && gesTargetview) {
 
-	if ([(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked] && ls_enabled) {
-		if(logging) NSLog(@"on lockscreen");
-		[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentModalViewController:vcont animated:YES];
-	} else if([[%c(SBUIController) sharedInstance] isAppSwitcherShowing]) {
-		if(logging) NSLog(@"switcher is showing");
-		[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentModalViewController:vcont animated:YES];
+		//vcont.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
+
+
+		if ([(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked] && ls_enabled) {
+			if(logging) NSLog(@"on lockscreen");
+			@try {
+				[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentViewController:vcont animated:YES completion:^{}];
+			}
+			@catch (NSException * e) {
+				NSLog(@"error! = %@",e);
+			}
+		} else if([[%c(SBUIController) sharedInstance] isAppSwitcherShowing]) {
+			if(logging) NSLog(@"switcher is showing");
+			@try {
+				[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentViewController:vcont animated:YES completion:^{}];
+			}
+			@catch (NSException * e) {
+				NSLog(@"error! = %@",e);
+			}	
+		} else {
+			[[%c(SBSearchViewController) sharedInstance] forceRotation];
+
+
+			window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+
+
+			UIStatusBar *status = [(SpringBoard *)[%c(SpringBoard) sharedApplication] statusBar];
+			NSLog(@"statusbar = %f",((UIWindow *)[status statusBarWindow]).windowLevel);
+			NSLog(@"statusbar.windowLevel %f",UIWindowLevelStatusBar);
+			window.windowLevel = UIWindowLevelStatusBar - 5; //one less than the statusbar
+
+
+			 window.rootViewController = vcont;
+
+	        [window setRootViewController:vcont];
+				
+			[window setDelegate:vcont];
+			[window setContentView:view];
+			[window makeKeyAndVisible];
+			//[window makeKeyAndOrderFront:nil];
+			[ges setTargetView:window];
+			// [ges updateForRotation];
+			[[%c(SBSearchViewController) sharedInstance] forceRotation];
+		}
 	}
-		else {
-		[[%c(SBSearchViewController) sharedInstance] forceRotation];
-
-
-		window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-
-
-		UIStatusBar *status = [(SpringBoard *)[%c(SpringBoard) sharedApplication] statusBar];
-		NSLog(@"statusbar = %f",((UIWindow *)[status statusBarWindow]).windowLevel);
-		NSLog(@"statusbar.windowLevel %f",UIWindowLevelStatusBar);
-		window.windowLevel = UIWindowLevelStatusBar - 5; //one less than the statusbar
-
-
-		 window.rootViewController = vcont;
-
-        [window setRootViewController:vcont];
-			
-		[window setDelegate:vcont];
-		[window setContentView:view];
-		[window makeKeyAndVisible];
-		//[window makeKeyAndOrderFront:nil];
-		[ges setTargetView:window];
-		// [ges updateForRotation];
-		[[%c(SBSearchViewController) sharedInstance] forceRotation];
-	}
+	
 }
 
 
@@ -581,7 +598,12 @@ static UIView *gesTargetview = nil;
 		// SBIcon *icon = [model expectedIconForDisplayIdentifier:identifier];
 		[self _fadeForLaunchWithDuration:0.3f completion:^void{
 			//[icon launchFromLocation:0];
-			[[UIApplication sharedApplication] launchApplicationWithIdentifier:identifier suspended:NO];
+			@try {
+				[[UIApplication sharedApplication] launchApplicationWithIdentifier:identifier suspended:NO];
+			}
+			@catch (NSException * e) {
+				NSLog(@"error! = %@",e);
+			}
 		}];
 
 		if ([(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked]) {
@@ -898,17 +920,26 @@ static void loadPrefs() {
 -(void)_finishUIUnlockFromSource:(int)arg1 withOptions:(id)arg2 {
 	%orig;
 	%log;
-	if(lockscreenIdentifier) {
-		if([lockscreenIdentifier rangeOfString:@"://"].location != NSNotFound) {
-			NSLog(@"is a url");
-			[[UIApplication sharedApplication] openURL:[NSURL URLWithString:lockscreenIdentifier]];
-		} else {
-			NSLog(@"is not a url");
-			[[UIApplication sharedApplication] launchApplicationWithIdentifier:lockscreenIdentifier suspended:NO];
+	@try {
+		if(lockscreenIdentifier) {
+			if([lockscreenIdentifier rangeOfString:@"://"].location != NSNotFound) {
+				NSLog(@"is a url");
+				[[UIApplication sharedApplication] openURL:[NSURL URLWithString:lockscreenIdentifier]];
+			} else {
+				NSLog(@"is not a url");
+				[[UIApplication sharedApplication] launchApplicationWithIdentifier:lockscreenIdentifier suspended:NO];
+			}
+			
 		}
-		
 	}
-	lockscreenIdentifier = nil;
+	@catch (NSException * e) {
+			NSLog(@"error! = %@",e);
+	}
+	@finally {
+		lockscreenIdentifier = nil;
+	}
+
+	
 }
 %end
 %hook SBSearchResultsAction
@@ -1153,13 +1184,18 @@ static void loadPrefs() {
 	if(logging) NSLog(@"orig complete.");
 
 	if ([(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked] || [[%c(SBUIController) sharedInstance] isAppSwitcherShowing]) {
-		[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController dismissModalViewControllerAnimated:YES];
+		[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController dismissViewControllerAnimated:YES completion:^{}];
+		
 		if(gesTargetview) {
 			SBSearchGesture *ges = [%c(SBSearchGesture) sharedInstance];
    			[ges setTargetView:gesTargetview];
 		}
 		if(fv) {
-			[fv addSubview:MSHookIvar<UIView *>(vcont, "_view")];
+			UIView *outview = MSHookIvar<UIView *>(vcont, "_view");
+			[fv addSubview:outview];
+			// for(id view in [outview subviews]) {
+			// 	[fv addSubview:view];
+			// }
 		}
 	}
 

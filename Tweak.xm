@@ -123,7 +123,7 @@ static UIView *gesTargetview = nil;
 				NSLog(@"error! = %@",e);
 			}	
 		} else {
-			[[%c(SBSearchViewController) sharedInstance] forceRotation];
+			//[[%c(SBSearchViewController) sharedInstance] forceRotation];
 
 
 			window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
@@ -145,7 +145,7 @@ static UIView *gesTargetview = nil;
 			//[window makeKeyAndOrderFront:nil];
 			[ges setTargetView:window];
 			// [ges updateForRotation];
-			[[%c(SBSearchViewController) sharedInstance] forceRotation];
+			//[[%c(SBSearchViewController) sharedInstance] forceRotation];
 		}
 	}
 	
@@ -157,8 +157,8 @@ static UIView *gesTargetview = nil;
 	if(force_rotation) {
 		float orientation = [(SpringBoard *)[%c(SpringBoard) sharedApplication] interfaceOrientationForCurrentDeviceOrientation];
 		NSLog(@"rotatating to %f",orientation);
-		[%c(SBSearchViewController) attemptRotationToDeviceOrientation];
 
+		[%c(SBSearchViewController) attemptRotationToDeviceOrientation];
 
 		[self setInterfaceOrientation:orientation];
 
@@ -180,7 +180,7 @@ static UIView *gesTargetview = nil;
 			[window _setRotatableViewOrientation:orientation duration:0.0f force:YES];
 		}
 
-		//[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:YES withPushDown:20];
+		[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:YES withPushDown:20];
 	}
 }
 
@@ -266,20 +266,6 @@ static UIView *gesTargetview = nil;
 	//[[%c(SBSearchViewController) sharedInstance] _updateHeaderHeightIfNeeded];
 }
 
-
-
-%new 
-// -(void)repositionCells {
-// 	UITableView *tableView = MSHookIvar<UITableView *>(self, "_tableView");
-// 	NSLog(@"contentOffset = %f",tableView.contentOffset.y);
-// 	NSLog(@"contentSize = (%f,%f)",tableView.contentSize.width, tableView.contentSize.height);
-// 	if(tableView.contentOffset.y <= 0) {
-// 		//[tableView setContentOffset:CGPointMake(0, -44) animated:NO];
-// 		[tableView scrollRectToVisible:CGRectMake(0,0,375,44) animated:NO];
-// 		//tableView.contentSize = CGSizeMake(tableView.contentSize.width, tableView.contentSize.height+20);
-// 	}
-// }
-
 %new 
 - (UIStatusBarStyle) preferredStatusBarStyle { 
     return UIStatusBarStyleLightContent; 
@@ -342,6 +328,8 @@ static UIView *gesTargetview = nil;
 		if(![[%c(SBSearchViewController) sharedInstance] _showingKeyboard] && !hideKeyboard) {
 			[[%c(SBSearchViewController) sharedInstance] _setShowingKeyboard:YES];	
 		}
+		[[%c(SBSearchViewController) sharedInstance] forceRotation];	
+
 		//[[%c(SBSearchViewController) sharedInstance] repositionCells];
 	}
 }
@@ -834,7 +822,7 @@ static void loadPrefs() {
 
 	generateAppList();
 
-	[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:NO withPushDown:20];
+	//[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:NO withPushDown:20];
 
 
 	SBAppSwitcherModel *switcherModel = [%c(SBAppSwitcherModel) sharedInstance];
@@ -1146,7 +1134,7 @@ static void loadPrefs() {
 		UINavigationController *nc = MSHookIvar<UINavigationController *>([%c(SBSearchViewController) sharedInstance], "_navigationController");
 	NSLog(@"main Nav Controller = %@",nc);
 	}
-	[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:YES withPushDown:20];
+	//[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:YES withPushDown:20];
 	
 }
 
@@ -1242,7 +1230,7 @@ static void loadPrefs() {
 
 	[[%c(SBSearchViewController) sharedInstance] forceRotation];
 
-	[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:YES withPushDown:10];
+	//[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:YES withPushDown:10];
 }
 
 // -(BOOL)homeScreenSupportsRotation{

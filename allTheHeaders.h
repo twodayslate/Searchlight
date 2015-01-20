@@ -21,7 +21,10 @@
 -(BOOL)window:(id)arg1 shouldAutorotateToInterfaceOrientation:(long long)arg2 ;
 @end
 
-@interface SBSearchViewController : UIViewController
+@interface SBSearchTableView : UITableView
+@end
+
+@interface SBSearchViewController : UIViewController 
 +(id)sharedInstance;
 -(BOOL)shouldDisplayListLauncher;
 -(void)searchGesture:(id)arg1 changedPercentComplete:(float)arg2;
@@ -222,10 +225,16 @@
 -(SBIconModel *)model;
 @end
 
+@interface UINavigationController (extras)
+-(void)_setUseCurrentStatusBarHeight:(BOOL)arg1 ;
+-(void)_setUseStandardStatusBarHeight:(BOOL)arg1 ;
+@end
+
 @interface UINavigationBar (extras)
 -(void)_setBackgroundView:(id)arg1 ;
 -(void)_updateBackgroundColor;
 -(void)_setBarPosition:(long long)arg1 ;
+-(void)_barSizeDidChangeAndSoDidHeight:(BOOL)arg1 ;
 @end
 
 @interface SBAppSwitcherModel : NSObject {
@@ -292,8 +301,7 @@
 -(id)recursiveDescription;
 @end
 
-@interface SBSearchTableView : UITableView
-@end
+
 
 
 @interface SBSearchTableHeaderView : UIView 

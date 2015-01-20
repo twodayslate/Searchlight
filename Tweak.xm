@@ -28,6 +28,179 @@ static SBRootFolderView *fv = nil;
 static SBRootFolderController *fvd = nil;
 static UIView *gesTargetview = nil;
 
+static void createAlphabet() {
+	if(logging) NSLog(@"ListLauncher7 - Inside createAlphabet");
+	NSMutableArray *baseAlphabet = [NSMutableArray arrayWithObjects:@"#",@"A",@"B",@"C",@"D",@"E",@"F",@"G", @"H",@"I",@"J",@"K",@"L",@"M",@"N",@"O",@"P",@"Q",@"R",@"S",@"T",@"U",@"V",@"W",@"X",@"Y",@"Z",nil];
+	indexValues = [[@[] mutableCopy] retain];
+
+	if([enabledSections containsObject:@"Application List"]) {
+
+		if(logging) NSLog(@"enabledSections = %@",enabledSections);
+
+		for(id spec in enabledSections) {
+			if([spec isEqual:@"Recent"]) {
+				[indexValues insertObject:@"▢" atIndex:[indexValues count]];
+			} else if([spec isEqual:@"Favorites"]) {
+				[indexValues insertObject:@"☆" atIndex:[indexValues count]];
+			} else {
+				NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"[a-zA-Z]" options:0 error:NULL];
+				NSString *firstAppName = [[applicationList valueForKey:@"displayName" forDisplayIdentifier:[listLauncherDisplayIdentifiers objectAtIndex:0]] substringToIndex:1];
+				NSTextCheckingResult *match = [regex firstMatchInString:firstAppName options:0 range:NSMakeRange(0, [firstAppName length])];
+				if(match) { NSLog(@" removed first inside"); 
+					[baseAlphabet removeObjectAtIndex:0];
+				}
+				for(id letter in baseAlphabet) {
+					[indexValues insertObject:letter atIndex:[indexValues count]];
+				}
+			}
+		}
+
+		if(logging) NSLog(@"base index values have been created");
+
+		if(logging) NSLog(@"indexValues = %@",indexValues);
+
+		indexPositions = [[NSMutableArray arrayWithArray:indexValues] retain]; 
+
+		//NSMutableArray *copyOfIndexes = [NSMutableArray arrayWithArray:indexValues]; 
+
+		for(int i = 0; i < [indexValues count]; i++) {
+			if([[indexValues objectAtIndex:i] isEqual:@"▢"] || [[indexValues objectAtIndex:i] isEqual:@"☆"] || [[indexValues objectAtIndex:i] isEqual:@"#"]) {
+				[indexPositions replaceObjectAtIndex:i withObject:[[NSNumber alloc] initWithInt:i]];
+			} else {
+				BOOL hasLetter = NO; 
+				for(int j = 0; j < [listLauncherDisplayIdentifiers count]; j++) {
+					if([[[applicationList valueForKey:@"displayName" forDisplayIdentifier:[listLauncherDisplayIdentifiers objectAtIndex:j]] uppercaseString] hasPrefix:[indexValues objectAtIndex:i]]) {
+						[indexPositions replaceObjectAtIndex:i withObject:[[NSNumber alloc] initWithInt:j]];
+						hasLetter = YES;
+						if(logging) NSLog(@"has letter = %@",[indexValues objectAtIndex:i]);
+						break;
+					}
+				}
+				if(!hasLetter) {
+					if(logging) NSLog(@"does NOT have letter = %@",[indexValues objectAtIndex:i]);
+					[indexValues removeObjectAtIndex:i];
+					[indexPositions removeObjectAtIndex:i];
+					i = 0;
+				}
+			}
+		}
+
+		if(logging) NSLog(@"done with the awesome loop");
+		if(logging) NSLog(@"indexValues = %@",indexValues);
+		if(logging) NSLog(@"indexPositions = %@",indexPositions);
+
+	}
+}
+
+static void setApplicationListDisplayIdentifiers (NSMutableDictionary *settings) {
+	if(logging) NSLog(@"inside setApplicationListDisplayIdentifiers");
+	listLauncherDisplayIdentifiers = [[NSMutableArray arrayWithArray:sortedDisplayIdentifiers] retain];
+	NSArray *disabledApps = [settings objectForKey:@"disabled"] ?: @[];
+
+	for(id spec in disabledApps) {
+		[listLauncherDisplayIdentifiers removeObject:spec];
+	}
+	[disabledApps release];
+}
+
+static void setFavorites (NSMutableDictionary *settings) {
+	if(logging) NSLog(@"inside setFavorites");
+	favoritesDisplayIdentifiers = [[[NSMutableArray alloc] init] retain];
+	NSMutableArray *favoriteList = [(NSMutableArray *) [settings valueForKey:@"favorites"] retain];
+	favoriteList =  [[favoriteList sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+	    return 	[[obj1 objectAtIndex:1] integerValue] > [[obj2 objectAtIndex:1] integerValue]	;}] mutableCopy];
+	for(id spec in favoriteList) {
+		[favoritesDisplayIdentifiers insertObject:[spec objectAtIndex:0] atIndex:[favoritesDisplayIdentifiers count]];
+	}
+	[favoriteList release];
+
+}
+
+static void generateAppList () {
+	NSString *plistPath = @"/var/mobile/Library/Preferences/org.thebigboss.searchlight.applist.plist";
+	NSMutableDictionary *appsettings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
+	if(!appsettings) {
+			appsettings = [NSMutableDictionary dictionary];
+			[appsettings writeToFile:plistPath atomically:YES];
+	}
+	[appsettings setValue:sortedDisplayIdentifiers forKey:@"applications"];
+	[appsettings writeToFile:plistPath atomically:YES];
+}
+
+static void loadPrefs() {
+
+	NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/org.thebigboss.searchlight.plist"];
+
+	logging = [settings objectForKey:@"logging_enabled"] ? [[settings objectForKey:@"logging_enabled"] boolValue] : NO;
+
+	if(logging) NSLog(@"Searchlight Settings = %@",settings);
+
+	hideKeyboard = [settings objectForKey:@"hide_keyboard"] ? [[settings objectForKey:@"hide_keyboard"] boolValue] : NO;
+
+	selectall = [settings objectForKey:@"hide_keyboard"] ? [[settings objectForKey:@"selectall"] boolValue] : NO;
+
+	headerStyle = [settings objectForKey:@"header_style"] ? [[settings objectForKey:@"header_style"] integerValue] : 2060;
+	
+	force_rotation = [settings objectForKey:@"rotation_enabled"] ? [[settings objectForKey:@"rotation_enabled"] boolValue] : YES;
+
+	resize_header = [settings objectForKey:@"resize_header_enabled"] ? [[settings objectForKey:@"resize_header_enabled"] boolValue] : NO;
+	
+	replace_nc = [settings objectForKey:@"nc_replace_enabled"] ? [[settings objectForKey:@"nc_replace_enabled"] boolValue] : NO;
+	
+	ls_enabled = [settings objectForKey:@"ls_enabled"] ? [[settings objectForKey:@"ls_enabled"] boolValue] : YES;
+
+
+	enabledSections = [settings objectForKey:@"enabledSections"] ?: @[]; [enabledSections retain];
+    maxRecent = [settings objectForKey:@"maxRecent"] ? [[settings objectForKey:@"maxRecent"] integerValue] : 3;
+	applicationList = [[ALApplicationList sharedApplicationList] retain];
+	recentName = [settings objectForKey:@"recentName"] ?: recentName; recentName = [recentName isEqual:@""] ? @"RECENT" : recentName;
+	applicationListName = [settings objectForKey:@"applicationListName"] ?: applicationListName; applicationListName = [applicationListName isEqual:@""] ? @"APPLICATION LIST" : applicationListName;
+	favoritesName = [settings objectForKey:@"favoriteName"] ?: favoritesName; favoritesName = [favoritesName isEqual:@""] ? @"FAVORITES" : favoritesName;
+
+	sortedDisplayIdentifiers = [[[applicationList.applications allKeys] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+	    return [[applicationList.applications objectForKey:obj1] caseInsensitiveCompare:[applicationList.applications objectForKey:obj2]];}] retain];
+
+	setApplicationListDisplayIdentifiers(settings);
+
+	setFavorites(settings);
+
+	if(logging) NSLog(@"favorites = %@",favoritesDisplayIdentifiers);
+
+	createAlphabet();
+
+	if(logging) NSLog(@"Done creating alphabet");
+	
+	SBSearchViewController *sview = [%c(SBSearchViewController) sharedInstance];
+	//[sview _updateTableContents];
+	UITableView *stable = MSHookIvar<UITableView *>(sview, "_tableView");
+	// stable.sectionIndexColor = [UIColor whiteColor]; // text color
+	// stable.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
+	// stable.sectionIndexBackgroundColor = [UIColor clearColor]; //bg
+	[stable reloadData];
+
+	generateAppList();
+
+	//[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:NO withPushDown:20];
+
+
+	SBAppSwitcherModel *switcherModel = [%c(SBAppSwitcherModel) sharedInstance];
+	recentApplications = [[[switcherModel snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] mutableCopy] retain];
+	//recentApplications = [[[NSMutableArray alloc] initWithArray:[switcherModel snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] copyItems:YES] autorelease];
+
+	//NSLog(@"all applications = %@",[[%c(SBApplicationController) sharedInstance] allApplications]);
+	//NSMutableDictionary *appdic = MSHookIvar<NSMutableDictionary *>([%c(SBApplicationController) sharedInstance], "_applicationsByBundleIdentifer");
+	//NSLog(@"applciation dictionary = %@",appdic);
+	//NSLog(@"recent apps = %@", recentApplications);
+	NSLog(@"snapshot = %@",[[%c(SBAppSwitcherModel) sharedInstance] snapshot]);
+	NSLog(@"class of snapshot = %@",[[[%c(SBAppSwitcherModel) sharedInstance] snapshot] class]);
+	//dictionary of "<SBDisplayLayout: 0x170838540> {\n    SBDisplayLayoutDisplayItemsPlistKey =     (\n                {\n            SBDisplayItemDisplayIdentifierPlistKey = \"com.apple.Preferences\";\n            SBDisplayItemTypePlistKey = App;\n        }\n    );\n    SBDisplayLayoutSizePlistKey =     (\n        0\n    );\n}",
+
+
+	if(logging) NSLog(@"Done with settings");
+}
+
+
+
 %hook SBNotificationCenterViewController
 -(void)presentGrabberView {
 	if(!replace_nc) %orig;
@@ -66,6 +239,27 @@ static UIView *gesTargetview = nil;
 // 	%log;
 // 	%orig;
 // }
+
+
+-(void)viewDidLayoutSubviews {
+	if(logging) %log;
+	%orig;
+
+	static dispatch_once_t initialPreferenceLoadToken;
+
+	dispatch_once(&initialPreferenceLoadToken, ^{
+		loadPrefs();
+	});
+
+	SBSearchTableView *table = MSHookIvar<SBSearchTableView *>(self, "_tableView");
+	table.sectionIndexColor = [UIColor whiteColor]; // text color
+	table.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
+	table.sectionIndexBackgroundColor = [UIColor clearColor]; //bg touched
+	//SBSearchTableHeaderView *header = [[%c(SBSearchTableHeaderView) alloc] initWithReuseIdentifier:@"SBSearchTableViewHeaderFooterView"];
+	//[table setTableHeaderView:header];
+}
+
+
 -(void)scrollViewDidScroll:(id)arg1 { %log; %orig; }
 -(void)scrollViewWillBeginDragging:(id)arg1  { %log; %orig; }
 -(BOOL)gestureRecognizerShouldBegin:(id)arg1 { %log; return %orig; }
@@ -181,6 +375,8 @@ static UIView *gesTargetview = nil;
 		}
 
 		[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:YES withPushDown:20];
+
+		[[%c(SBSearchViewController) sharedInstance] _updateHeaderHeightIfNeeded];
 	}
 }
 
@@ -203,6 +399,8 @@ static UIView *gesTargetview = nil;
 		// navframe.size.height = 44; 
 		navframe.origin.y = pushDown;
 		nav.view.frame = navframe;
+
+		[nav _setUseStandardStatusBarHeight:YES];
 	}
 
 	
@@ -302,9 +500,9 @@ static UIView *gesTargetview = nil;
 -(id)sectionIndexTitlesForTableView:(UITableView *)arg1 {
 	if(logging) %log;
 	if([self shouldDisplayListLauncher]) return indexValues;
-	arg1.sectionIndexColor = [UIColor whiteColor]; // text color
-	arg1.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
-	arg1.sectionIndexBackgroundColor = [UIColor clearColor]; //bg touched
+	// arg1.sectionIndexColor = [UIColor whiteColor]; // text color
+	// arg1.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
+	// arg1.sectionIndexBackgroundColor = [UIColor clearColor]; //bg touched
 	return nil;
 }
 
@@ -376,9 +574,9 @@ static UIView *gesTargetview = nil;
 		
 	}
 		
-	arg1.sectionIndexColor = [UIColor whiteColor]; // text color
-	arg1.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
-	arg1.sectionIndexBackgroundColor = [UIColor clearColor]; //bg
+	// arg1.sectionIndexColor = [UIColor whiteColor]; // text color
+	// arg1.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
+	// arg1.sectionIndexBackgroundColor = [UIColor clearColor]; //bg
 
 	return %orig;
 }
@@ -395,9 +593,9 @@ static UIView *gesTargetview = nil;
 -(int)tableView:(UITableView *)tableview sectionForSectionIndexTitle:(id)title atIndex:(int)index {
 	if(logging) %log;
 
-	tableview.sectionIndexColor = [UIColor whiteColor]; // text color
-	tableview.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
-	tableview.sectionIndexBackgroundColor = [UIColor clearColor]; //bg touched
+	// tableview.sectionIndexColor = [UIColor whiteColor]; // text color
+	// tableview.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
+	// tableview.sectionIndexBackgroundColor = [UIColor clearColor]; //bg touched
 
 	int appSection = [enabledSections indexOfObject:@"Application List"];
 	int recentSection = [enabledSections indexOfObject:@"Recent"];
@@ -670,176 +868,6 @@ static UIView *gesTargetview = nil;
 // }
 %end
 
-static void createAlphabet() {
-	if(logging) NSLog(@"ListLauncher7 - Inside createAlphabet");
-	NSMutableArray *baseAlphabet = [NSMutableArray arrayWithObjects:@"#",@"A",@"B",@"C",@"D",@"E",@"F",@"G", @"H",@"I",@"J",@"K",@"L",@"M",@"N",@"O",@"P",@"Q",@"R",@"S",@"T",@"U",@"V",@"W",@"X",@"Y",@"Z",nil];
-	indexValues = [[@[] mutableCopy] retain];
-
-	if([enabledSections containsObject:@"Application List"]) {
-
-		if(logging) NSLog(@"enabledSections = %@",enabledSections);
-
-		for(id spec in enabledSections) {
-			if([spec isEqual:@"Recent"]) {
-				[indexValues insertObject:@"▢" atIndex:[indexValues count]];
-			} else if([spec isEqual:@"Favorites"]) {
-				[indexValues insertObject:@"☆" atIndex:[indexValues count]];
-			} else {
-				NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"[a-zA-Z]" options:0 error:NULL];
-				NSString *firstAppName = [[applicationList valueForKey:@"displayName" forDisplayIdentifier:[listLauncherDisplayIdentifiers objectAtIndex:0]] substringToIndex:1];
-				NSTextCheckingResult *match = [regex firstMatchInString:firstAppName options:0 range:NSMakeRange(0, [firstAppName length])];
-				if(match) { NSLog(@" removed first inside"); 
-					[baseAlphabet removeObjectAtIndex:0];
-				}
-				for(id letter in baseAlphabet) {
-					[indexValues insertObject:letter atIndex:[indexValues count]];
-				}
-			}
-		}
-
-		if(logging) NSLog(@"base index values have been created");
-
-		if(logging) NSLog(@"indexValues = %@",indexValues);
-
-		indexPositions = [[NSMutableArray arrayWithArray:indexValues] retain]; 
-
-		//NSMutableArray *copyOfIndexes = [NSMutableArray arrayWithArray:indexValues]; 
-
-		for(int i = 0; i < [indexValues count]; i++) {
-			if([[indexValues objectAtIndex:i] isEqual:@"▢"] || [[indexValues objectAtIndex:i] isEqual:@"☆"] || [[indexValues objectAtIndex:i] isEqual:@"#"]) {
-				[indexPositions replaceObjectAtIndex:i withObject:[[NSNumber alloc] initWithInt:i]];
-			} else {
-				BOOL hasLetter = NO; 
-				for(int j = 0; j < [listLauncherDisplayIdentifiers count]; j++) {
-					if([[[applicationList valueForKey:@"displayName" forDisplayIdentifier:[listLauncherDisplayIdentifiers objectAtIndex:j]] uppercaseString] hasPrefix:[indexValues objectAtIndex:i]]) {
-						[indexPositions replaceObjectAtIndex:i withObject:[[NSNumber alloc] initWithInt:j]];
-						hasLetter = YES;
-						if(logging) NSLog(@"has letter = %@",[indexValues objectAtIndex:i]);
-						break;
-					}
-				}
-				if(!hasLetter) {
-					if(logging) NSLog(@"does NOT have letter = %@",[indexValues objectAtIndex:i]);
-					[indexValues removeObjectAtIndex:i];
-					[indexPositions removeObjectAtIndex:i];
-					i = 0;
-				}
-			}
-		}
-
-		if(logging) NSLog(@"done with the awesome loop");
-		if(logging) NSLog(@"indexValues = %@",indexValues);
-		if(logging) NSLog(@"indexPositions = %@",indexPositions);
-
-	}
-}
-
-static void setApplicationListDisplayIdentifiers (NSMutableDictionary *settings) {
-	if(logging) NSLog(@"inside setApplicationListDisplayIdentifiers");
-	listLauncherDisplayIdentifiers = [[NSMutableArray arrayWithArray:sortedDisplayIdentifiers] retain];
-	NSArray *disabledApps = [settings objectForKey:@"disabled"] ?: @[];
-
-	for(id spec in disabledApps) {
-		[listLauncherDisplayIdentifiers removeObject:spec];
-	}
-	[disabledApps release];
-}
-
-static void setFavorites (NSMutableDictionary *settings) {
-	if(logging) NSLog(@"inside setFavorites");
-	favoritesDisplayIdentifiers = [[[NSMutableArray alloc] init] retain];
-	NSMutableArray *favoriteList = [(NSMutableArray *) [settings valueForKey:@"favorites"] retain];
-	favoriteList =  [[favoriteList sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
-	    return 	[[obj1 objectAtIndex:1] integerValue] > [[obj2 objectAtIndex:1] integerValue]	;}] mutableCopy];
-	for(id spec in favoriteList) {
-		[favoritesDisplayIdentifiers insertObject:[spec objectAtIndex:0] atIndex:[favoritesDisplayIdentifiers count]];
-	}
-	[favoriteList release];
-
-}
-
-static void generateAppList () {
-	NSString *plistPath = @"/var/mobile/Library/Preferences/org.thebigboss.searchlight.applist.plist";
-	NSMutableDictionary *appsettings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
-	if(!appsettings) {
-			appsettings = [NSMutableDictionary dictionary];
-			[appsettings writeToFile:plistPath atomically:YES];
-	}
-	[appsettings setValue:sortedDisplayIdentifiers forKey:@"applications"];
-	[appsettings writeToFile:plistPath atomically:YES];
-}
-
-static void loadPrefs() {
-
-	NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/org.thebigboss.searchlight.plist"];
-
-	logging = [settings objectForKey:@"logging_enabled"] ? [[settings objectForKey:@"logging_enabled"] boolValue] : NO;
-
-	if(logging) NSLog(@"Searchlight Settings = %@",settings);
-
-	hideKeyboard = [settings objectForKey:@"hide_keyboard"] ? [[settings objectForKey:@"hide_keyboard"] boolValue] : NO;
-
-	selectall = [settings objectForKey:@"hide_keyboard"] ? [[settings objectForKey:@"selectall"] boolValue] : NO;
-
-	headerStyle = [settings objectForKey:@"header_style"] ? [[settings objectForKey:@"header_style"] integerValue] : 2060;
-	
-	force_rotation = [settings objectForKey:@"rotation_enabled"] ? [[settings objectForKey:@"rotation_enabled"] boolValue] : YES;
-
-	resize_header = [settings objectForKey:@"resize_header_enabled"] ? [[settings objectForKey:@"resize_header_enabled"] boolValue] : NO;
-	
-	replace_nc = [settings objectForKey:@"nc_replace_enabled"] ? [[settings objectForKey:@"nc_replace_enabled"] boolValue] : NO;
-	
-	ls_enabled = [settings objectForKey:@"ls_enabled"] ? [[settings objectForKey:@"ls_enabled"] boolValue] : YES;
-
-
-	enabledSections = [settings objectForKey:@"enabledSections"] ?: @[]; [enabledSections retain];
-    maxRecent = [settings objectForKey:@"maxRecent"] ? [[settings objectForKey:@"maxRecent"] integerValue] : 3;
-	applicationList = [[ALApplicationList sharedApplicationList] retain];
-	recentName = [settings objectForKey:@"recentName"] ?: recentName; recentName = [recentName isEqual:@""] ? @"RECENT" : recentName;
-	applicationListName = [settings objectForKey:@"applicationListName"] ?: applicationListName; applicationListName = [applicationListName isEqual:@""] ? @"APPLICATION LIST" : applicationListName;
-	favoritesName = [settings objectForKey:@"favoriteName"] ?: favoritesName; favoritesName = [favoritesName isEqual:@""] ? @"FAVORITES" : favoritesName;
-
-	sortedDisplayIdentifiers = [[[applicationList.applications allKeys] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
-	    return [[applicationList.applications objectForKey:obj1] caseInsensitiveCompare:[applicationList.applications objectForKey:obj2]];}] retain];
-
-	setApplicationListDisplayIdentifiers(settings);
-
-	setFavorites(settings);
-
-	if(logging) NSLog(@"favorites = %@",favoritesDisplayIdentifiers);
-
-	createAlphabet();
-
-	if(logging) NSLog(@"Done creating alphabet");
-	
-	SBSearchViewController *sview = [%c(SBSearchViewController) sharedInstance];
-	//[sview _updateTableContents];
-	UITableView *stable = MSHookIvar<UITableView *>(sview, "_tableView");
-	stable.sectionIndexColor = [UIColor whiteColor]; // text color
-	stable.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
-	stable.sectionIndexBackgroundColor = [UIColor clearColor]; //bg
-	[stable reloadData];
-
-	generateAppList();
-
-	//[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:NO withPushDown:20];
-
-
-	SBAppSwitcherModel *switcherModel = [%c(SBAppSwitcherModel) sharedInstance];
-	recentApplications = [[[switcherModel snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] mutableCopy] retain];
-	//recentApplications = [[[NSMutableArray alloc] initWithArray:[switcherModel snapshotOfFlattenedArrayOfAppIdentifiersWhichIsOnlyTemporary] copyItems:YES] autorelease];
-
-	//NSLog(@"all applications = %@",[[%c(SBApplicationController) sharedInstance] allApplications]);
-	//NSMutableDictionary *appdic = MSHookIvar<NSMutableDictionary *>([%c(SBApplicationController) sharedInstance], "_applicationsByBundleIdentifer");
-	//NSLog(@"applciation dictionary = %@",appdic);
-	//NSLog(@"recent apps = %@", recentApplications);
-	NSLog(@"snapshot = %@",[[%c(SBAppSwitcherModel) sharedInstance] snapshot]);
-	NSLog(@"class of snapshot = %@",[[[%c(SBAppSwitcherModel) sharedInstance] snapshot] class]);
-	//dictionary of "<SBDisplayLayout: 0x170838540> {\n    SBDisplayLayoutDisplayItemsPlistKey =     (\n                {\n            SBDisplayItemDisplayIdentifierPlistKey = \"com.apple.Preferences\";\n            SBDisplayItemTypePlistKey = App;\n        }\n    );\n    SBDisplayLayoutSizePlistKey =     (\n        0\n    );\n}",
-
-
-	if(logging) NSLog(@"Done with settings");
-}
 
 %hook SBAppSwitcherModel
 -(void)appsRemoved:(id)arg1 added:(id)arg2 {
@@ -957,13 +985,13 @@ static void loadPrefs() {
 }
 %end
 
-%hook SpringBoard
--(id)init {
-	id sb = %orig;
-	if(sb) loadPrefs();
-	return sb;
-}
-%end
+// %hook SpringBoard
+// -(id)init {
+// 	id sb = %orig;
+// 	if(sb) loadPrefs();
+// 	return sb;
+// }
+// %end
 
 // %hook SBSearchStandardCell
 // -(float)leftTextMargin {
@@ -1037,16 +1065,18 @@ static void loadPrefs() {
 // 	NSLog(@"initWithFrame launched");
 // 	return %orig;
 // }
--(id)initWithFrame:(CGRect)arg1 style:(long long)arg2 {
-	NSLog(@"initWithFrame style launched");
-	SBSearchTableView *table = %orig;
-	table.sectionIndexColor = [UIColor whiteColor]; // text color
-	table.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
-	table.sectionIndexBackgroundColor = [UIColor clearColor]; //bg touched
-	//SBSearchTableHeaderView *header = [[%c(SBSearchTableHeaderView) alloc] initWithReuseIdentifier:@"SBSearchTableViewHeaderFooterView"];
-	//[table setTableHeaderView:header];
-	return table;
-}
+// -(id)initWithFrame:(CGRect)arg1 style:(long long)arg2 {
+// 	NSLog(@"initWithFrame style launched");
+// 	SBSearchTableView *table = %orig;
+// 	table.sectionIndexColor = [UIColor whiteColor]; // text color
+// 	table.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
+// 	table.sectionIndexBackgroundColor = [UIColor clearColor]; //bg touched
+// 	//SBSearchTableHeaderView *header = [[%c(SBSearchTableHeaderView) alloc] initWithReuseIdentifier:@"SBSearchTableViewHeaderFooterView"];
+// 	//[table setTableHeaderView:header];
+// 	return table;
+// }
+
+
 %end
 
 %hook SBSearchModel

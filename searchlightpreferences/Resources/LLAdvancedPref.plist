@@ -37,10 +37,10 @@
 			</array>
 			<key>shortTitles</key>
 			<array>
-				<string>2060</string>
-				<string>0</string>
-				<string>1</string>
-				<string>2</string>
+				<string>Adaptive Light</string>
+				<string>Light</string>
+				<string>Dark</string>
+				<string>Blur</string>
 			</array>
 			<key>default</key>
 			<string>2060</string>
@@ -58,7 +58,7 @@
 			<key>label</key>
 			<string>Resize Header</string>
 			<key>footerText</key>
-			<string>Experimental. Adds the statusbar when launched in an application.</string>
+			<string>Experimental. Adds room for the statusbar when launched in an application.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -73,8 +73,31 @@
 			<string>Enabled</string>
 			<key>PostNotification</key>
 			<string>org.thebigboss.searchlight/settingschanged</string>
-
 		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Blur Section Header</string>
+			<key>footerText</key>
+			<string>"Fixes" a bug where the section header doesn't cover cells. Blurs slow down system though.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>org.thebigboss.searchlight</string>
+			<key>key</key>
+			<string>blur_section_header_enabled</string>
+			<key>label</key>
+			<string>Enabled</string>
+			<key>PostNotification</key>
+			<string>org.thebigboss.searchlight/settingschanged</string>
+		</dict>
+
 
 	</array>
 	<key>title</key>

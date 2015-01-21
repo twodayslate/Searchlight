@@ -41,18 +41,24 @@
 				<string>1</string>
 				<string>3</string>
 				<string>5</string>
+				<string>10</string>
+				<string>15</string>
 			</array>
 			<key>validTitles</key>
 			<array>
 				<string>1</string>
 				<string>3</string>
 				<string>5</string>
+				<string>10</string>
+				<string>15</string>
 			</array>
 			<key>shortTitles</key>
 			<array>
 				<string>1</string>
 				<string>3</string>
 				<string>5</string>
+				<string>10</string>
+				<string>15</string>
 			</array>
 			<key>label</key>
 			<string>Number of apps</string>

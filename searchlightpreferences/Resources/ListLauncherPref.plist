@@ -197,7 +197,7 @@
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>footerText</key>
-			<string>No respring required! Be patient.</string>
+			<string>No Respring required! Changes will also be saved on Respring. Please be patient.</string>
 			<key>footerAlignment</key>
 			<integer>1</integer>
 		</dict>
@@ -205,7 +205,7 @@
             <key>cell</key>
             <string>PSButtonCell</string>
             <key>label</key>
-            <string>Save/Refresh</string>
+            <string>Save &amp; Refresh</string>
             <key>id</key>
             <string>save</string>
             <key>action</key>

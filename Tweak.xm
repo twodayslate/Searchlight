@@ -15,7 +15,8 @@ static NSString *applicationIdentifier = nil;
 static _UIBackdropView *background = nil;
 static int headerStyle = 2060;
 static bool logging, hideKeyboard, selectall, resize_header, replace_nc = false;
-static bool force_rotation, ls_enabled = true;
+static bool force_rotation, ls_enabled, blur_section_header_enabled = true;
+static NSCache *nameCache = [NSCache new];
 
 static NSMutableArray *indexValues = nil;
 static NSMutableArray *indexPositions = nil; 
@@ -148,6 +149,8 @@ static void loadPrefs() {
 	replace_nc = [settings objectForKey:@"nc_replace_enabled"] ? [[settings objectForKey:@"nc_replace_enabled"] boolValue] : NO;
 	
 	ls_enabled = [settings objectForKey:@"ls_enabled"] ? [[settings objectForKey:@"ls_enabled"] boolValue] : YES;
+	
+	blur_section_header_enabled = [settings objectForKey:@"blur_section_header_enabled"] ? [[settings objectForKey:@"blur_section_header_enabled"] boolValue] : YES;
 
 
 	enabledSections = [settings objectForKey:@"enabledSections"] ?: @[]; [enabledSections retain];
@@ -648,7 +651,11 @@ static void loadPrefs() {
 		}
 		
 
-		NSString *name = [applicationList valueForKey:@"displayName" forDisplayIdentifier:identifier];
+		NSString *name = @"";
+		if ([nameCache objectForKey:identifier] == nil) { // Thanks @daementor 
+			[nameCache setObject:[applicationList valueForKey:@"displayName" forDisplayIdentifier:identifier] forKey:identifier];
+		}
+		name = [nameCache objectForKey:identifier];
 
 		SBSearchImageCell *cell = [arg1 dequeueReusableCellWithIdentifier:@"searchlight"];
 
@@ -828,16 +835,20 @@ static void loadPrefs() {
 	//NSLog(@"header background view = %@",[arg1 _tableHeaderBackgroundView]);
 	//[arg1 setTableHeaderView:header];
 	//SBSearchResultsBackdropView *tableBackdrop = [[%c(SBSearchResultsBackdropView) alloc] initWithFrame:header.frame];
-	_UIBackdropViewSettings *settings = [_UIBackdropViewSettings settingsForStyle:2];
+	
+	if(blur_section_header_enabled) {
+		_UIBackdropViewSettings *settings = [_UIBackdropViewSettings settingsForStyle:2];
 
-	// initialization of the blur view
-	_UIBackdropView *hbackground = [[_UIBackdropView alloc] initWithSettings:settings];
-	[hbackground setBlurRadiusSetOnce:YES];
-	[hbackground setBlursBackground:NO];
-	[hbackground setBlurRadius:0.1];
+		// initialization of the blur view
+		_UIBackdropView *hbackground = [[_UIBackdropView alloc] initWithSettings:settings];
+		[hbackground setBlurRadiusSetOnce:YES];
+		[hbackground setBlursBackground:NO];
+		[hbackground setBlurRadius:0.1];
 
 
-	[header insertSubview:hbackground atIndex:0];
+		[header insertSubview:hbackground atIndex:0];
+	}
+	
 
 	return header;
 }

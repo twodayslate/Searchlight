@@ -103,7 +103,7 @@
 		</dict>
 		<dict>
 			<key>cell</key>			<string>PSButtonCell</string>
-			<key>label</key>		<string>NosSarchCancel</string>
+			<key>label</key>		<string>NoSearchCancel</string>
 			<key>icon</key> 	    <string>spoturl.png</string>
 			<key>action</key>  		<string>nosearchcancel</string>
 		</dict>
@@ -130,6 +130,18 @@
 			<key>label</key>		<string>ClearOnOpen</string>
 			<key>icon</key> 	    <string>spoturl.png</string>
 			<key>action</key>  		<string>clearonopen</string>
+		</dict>
+		<dict>
+			<key>cell</key>			<string>PSButtonCell</string>
+			<key>label</key>		<string>meme</string>
+			<key>icon</key> 	    <string>meme.png</string>
+			<key>action</key>  		<string>meme</string>
+		</dict>
+		<dict>
+			<key>cell</key>			<string>PSButtonCell</string>
+			<key>label</key>		<string>Spotlight Google</string>
+			<key>icon</key> 	    <string>spotlightgoogle.png</string>
+			<key>action</key>  		<string>spotlightgoogle</string>
 		</dict>
 
 	</array>

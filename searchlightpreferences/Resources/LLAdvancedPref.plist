@@ -81,7 +81,7 @@
 			<key>label</key>
 			<string>Blur Section Header</string>
 			<key>footerText</key>
-			<string>"Fixes" a bug where the section header doesn't cover cells. Blurs slow down system though.</string>
+			<string>Should be unnecessary. Blurs slow down system though.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -92,6 +92,52 @@
 			<string>org.thebigboss.searchlight</string>
 			<key>key</key>
 			<string>blur_section_header_enabled</string>
+			<key>label</key>
+			<string>Enabled</string>
+			<key>PostNotification</key>
+			<string>org.thebigboss.searchlight/settingschanged</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Show Badge Number</string>
+			<key>footerText</key>
+			<string>Experimental. Doesn't work with rotation.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<false />
+			<key>defaults</key>
+			<string>org.thebigboss.searchlight</string>
+			<key>key</key>
+			<string>show_badges</string>
+			<key>label</key>
+			<string>Enabled</string>
+			<key>PostNotification</key>
+			<string>org.thebigboss.searchlight/settingschanged</string>
+		</dict>
+
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Change header</string>
+			<key>footerText</key>
+			<string>Experimental. Keeps the blurred wallpaper background.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true />
+			<key>defaults</key>
+			<string>org.thebigboss.searchlight</string>
+			<key>key</key>
+			<string>changeHeader</string>
 			<key>label</key>
 			<string>Enabled</string>
 			<key>PostNotification</key>

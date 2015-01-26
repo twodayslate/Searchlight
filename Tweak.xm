@@ -14,9 +14,11 @@ static NSString *lockscreenIdentifier = nil;
 static NSString *applicationIdentifier = nil;
 static _UIBackdropView *background = nil;
 static int headerStyle = 2060;
-static bool logging, hideKeyboard, selectall, resize_header, replace_nc = false;
+static bool logging, hideKeyboard, selectall, resize_header, replace_nc, show_badges, clearResults, changeHeader = false;
 static bool force_rotation, ls_enabled, blur_section_header_enabled = true;
 static NSCache *nameCache = [NSCache new];
+static NSCache *smallIconCache = [NSCache new];
+static NSCache *largeIconCache = [NSCache new];
 
 static NSMutableArray *indexValues = nil;
 static NSMutableArray *indexPositions = nil; 
@@ -147,10 +149,13 @@ static void loadPrefs() {
 	resize_header = [settings objectForKey:@"resize_header_enabled"] ? [[settings objectForKey:@"resize_header_enabled"] boolValue] : NO;
 	
 	replace_nc = [settings objectForKey:@"nc_replace_enabled"] ? [[settings objectForKey:@"nc_replace_enabled"] boolValue] : NO;
+	show_badges = [settings objectForKey:@"show_badges"] ? [[settings objectForKey:@"show_badges"] boolValue] : NO;
 	
 	ls_enabled = [settings objectForKey:@"ls_enabled"] ? [[settings objectForKey:@"ls_enabled"] boolValue] : YES;
 	
 	blur_section_header_enabled = [settings objectForKey:@"blur_section_header_enabled"] ? [[settings objectForKey:@"blur_section_header_enabled"] boolValue] : YES;
+	clearResults = [settings objectForKey:@"clearResults"] ? [[settings objectForKey:@"clearResults"] boolValue] : NO;
+	changeHeader = [settings objectForKey:@"changeHeader"] ? [[settings objectForKey:@"changeHeader"] boolValue] : NO;
 
 
 	enabledSections = [settings objectForKey:@"enabledSections"] ?: @[]; [enabledSections retain];
@@ -176,9 +181,6 @@ static void loadPrefs() {
 	SBSearchViewController *sview = [%c(SBSearchViewController) sharedInstance];
 	//[sview _updateTableContents];
 	UITableView *stable = MSHookIvar<UITableView *>(sview, "_tableView");
-	// stable.sectionIndexColor = [UIColor whiteColor]; // text color
-	// stable.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
-	// stable.sectionIndexBackgroundColor = [UIColor clearColor]; //bg
 	[stable reloadData];
 
 	generateAppList();
@@ -197,6 +199,8 @@ static void loadPrefs() {
 	NSLog(@"snapshot = %@",[[%c(SBAppSwitcherModel) sharedInstance] snapshot]);
 	NSLog(@"class of snapshot = %@",[[[%c(SBAppSwitcherModel) sharedInstance] snapshot] class]);
 	//dictionary of "<SBDisplayLayout: 0x170838540> {\n    SBDisplayLayoutDisplayItemsPlistKey =     (\n                {\n            SBDisplayItemDisplayIdentifierPlistKey = \"com.apple.Preferences\";\n            SBDisplayItemTypePlistKey = App;\n        }\n    );\n    SBDisplayLayoutSizePlistKey =     (\n        0\n    );\n}",
+
+
 
 
 	if(logging) NSLog(@"Done with settings");
@@ -238,10 +242,59 @@ static void loadPrefs() {
 
 %hook SBSearchViewController
 
-// -(void)_updateCellClipping:(id)arg1 {
-// 	%log;
+-(void)_keyboardWillChangeFrame:(id)arg1 {
+	if(logging) %log;
+	%orig;
+}
+
+
+-(void)_updateCellClipping:(id)arg1 {
+	if(logging) %log;
+	%orig;
+}
+
+// -(void)scrollViewDidScroll:(id)arg1 {
+// 	if(logging) %log;
 // 	%orig;
+// 	[self _updateClipping];
+
+// 	SBSearchTableView *table = MSHookIvar<SBSearchTableView *>(self, "_tableView");
+// 	for (SBSearchTableViewCell *cell in table.visibleCells) {
+// 		NSLog(@"clipping container = %@",[[cell clippingContainer] subviews]);
+// 		[self _updateCellClipping:[%c(NSConcreteNotification) notificationWithName:@"UpdateMyClipping" object:cell]];
+// 		[cell clipToTopHeaderWithHeight:52.0f inTableView:table];
+// 		CGFloat hiddenFrameHeight = table.contentOffset.y + self.navigationController.navigationBar.frame.size.height - cell.frame.origin.y;
+//         if (hiddenFrameHeight >= 0 || hiddenFrameHeight <= cell.frame.size.height) {
+//             [self maskCell:cell fromTopWithMargin:hiddenFrameHeight];
+//         }
+//         [cell updateConstraints];
+// 	}
+
+// 	//table.contentInset = 52.0f;
 // }
+
+// %new
+// - (void)maskCell:(SBSearchTableViewCell *)cell fromTopWithMargin:(CGFloat)margin
+// {
+//     cell.layer.mask = [self visibilityMaskForCell:cell withLocation:margin/cell.frame.size.height];
+//     cell.layer.masksToBounds = YES;
+// }
+
+// %new
+// - (CAGradientLayer *)visibilityMaskForCell:(UITableViewCell *)cell withLocation:(CGFloat)location {
+// 	CAGradientLayer *mask = [CAGradientLayer layer];
+//     mask.frame = cell.bounds;
+//     mask.colors = [NSArray arrayWithObjects:(id)[[UIColor colorWithWhite:1 alpha:0] CGColor], (id)[[UIColor colorWithWhite:1 alpha:1] CGColor], nil];
+//     mask.locations = [NSArray arrayWithObjects:[NSNumber numberWithFloat:location], [NSNumber numberWithFloat:location], nil];
+//     return mask;
+// }
+
+// -(void)scrollViewWillBeginDragging:(id)arg1 {
+// 	if(logging) %log;
+// 	%orig;
+// 	[self _updateClipping];
+// }
+
 
 
 -(void)viewDidLayoutSubviews {
@@ -249,7 +302,6 @@ static void loadPrefs() {
 	%orig;
 
 	static dispatch_once_t initialPreferenceLoadToken;
-
 	dispatch_once(&initialPreferenceLoadToken, ^{
 		loadPrefs();
 	});
@@ -258,13 +310,11 @@ static void loadPrefs() {
 	table.sectionIndexColor = [UIColor whiteColor]; // text color
 	table.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
 	table.sectionIndexBackgroundColor = [UIColor clearColor]; //bg touched
+	[table reloadData];
 	//SBSearchTableHeaderView *header = [[%c(SBSearchTableHeaderView) alloc] initWithReuseIdentifier:@"SBSearchTableViewHeaderFooterView"];
 	//[table setTableHeaderView:header];
 }
 
-
--(void)scrollViewDidScroll:(id)arg1 { %log; %orig; }
--(void)scrollViewWillBeginDragging:(id)arg1  { %log; %orig; }
 -(BOOL)gestureRecognizerShouldBegin:(id)arg1 { %log; return %orig; }
 
 
@@ -407,51 +457,43 @@ static void loadPrefs() {
 	}
 
 	
+			// nav.navigationBar.clipsToBounds = NO;
+			// nav.edgesForExtendedLayout = UIRectEdgeNone;
+			// nav.automaticallyAdjustsScrollViewInsets = NO;	
 
-	// UIViewController *nmv = MSHookIvar<UIViewController *>([%c(SBSearchViewController) sharedInstance], "_mainViewController");
-	// NSLog(@"main view controller = %@",nmv);
-	nav.navigationBar.clipsToBounds = NO;
-	nav.navigationBar.barStyle = UIBarStyleBlack;
-	nav.edgesForExtendedLayout = UIRectEdgeNone;
-	// [nav.navigationBar setBarStyle:UIBarStyleBlack];
-	// nav.navigationBar.barTintColor = [UIColor blackColor];
-	// [nav.navigationBar setBarTintColor:[UIColor blackColor]];
-	nav.navigationBar.translucent = YES;
-	nav.automaticallyAdjustsScrollViewInsets = NO;
-	// //nav.edgesForExtendedLayout = UIRectEdgeAll;
-	// nav.edgesForExtendedLayout = UIRectEdgeTop;
-	// //nav.automaticallyAdjustsScrollViewInsets = YES;
-	// nav.extendedLayoutIncludesOpaqueBars = NO;
-	//[[UINavigationBar appearance] setTintColor:[UIColor colorWithWhite:0.0 alpha:0.5]];
-	// [nav.navigationBar _setBackgroundView:[[_UIBackdropView alloc] initWithStyle:2060]];
-	// NSLog(@"navigation bar subviews = %@",[nav.navigationBar subviews]);
-	for(UIView *subview in [nav.navigationBar subviews]) {
-		if([subview isKindOfClass:[%c(SBWallpaperEffectView) class]]) {
-			NSLog(@"SBwallpapereffectview = %@",subview);
-			//subview.alpha = 0.0;
-			//[subview removeFromSuperview];
-			[(SBWallpaperEffectView *)subview setStyle:0];
-			// Creating blur view using settings object
+	if(changeHeader) {
+		for(UIView *subview in [nav.navigationBar subviews]) {
+			if([subview isKindOfClass:[%c(SBWallpaperEffectView) class]]) {
+				NSLog(@"SBwallpapereffectview = %@",subview);
+				//subview.alpha = 0.0;
+				[subview removeFromSuperview];
+				//[(SBWallpaperEffectView *)subview setStyle:0];
+				// Creating blur view using settings object
 
+			}
 		}
-	}
-	if(background) {
-		[background removeFromSuperview];
-	}
-	
-	_UIBackdropViewSettings *settings = [_UIBackdropViewSettings settingsForStyle:headerStyle];
+		if(background) {
+			[background removeFromSuperview];
+		}
+		
+		_UIBackdropViewSettings *settings = [_UIBackdropViewSettings settingsForStyle:headerStyle];
 
-// initialization of the blur view
-	background = [[_UIBackdropView alloc] initWithFrame:CGRectMake(0,-20,nav.navigationBar.frame.size.width,nav.navigationBar.frame.size.height+20) autosizesToFitSuperview:NO settings:settings];
-	//[nav.navigationBar _setBackgroundView:background];
-	background.clipsToBounds = NO;
-	//nav.navigationBar.frame = CGRectMake(0,0,background.frame.size.width,background.frame.size.height+15);
-	//nav.navigationBar.frame = CGRectMake(-15,0,background.frame.size.width,background.frame.size.height);
-	//background.frame = CGRectMake(-15,0,background.frame.size.width,background.frame.size.height);
-	// UIView *bgview = MSHookIvar<UIView *>(nav.navigationBar, "_backgroundView");
-	// bgview = background;
+	// initialization of the blur view
+		background = [[_UIBackdropView alloc] initWithFrame:CGRectMake(0,-20,nav.navigationBar.frame.size.width,nav.navigationBar.frame.size.height+20) autosizesToFitSuperview:NO settings:settings];
+		//[nav.navigationBar _setBackgroundView:background];
+		background.clipsToBounds = NO;
+		//nav.navigationBar.frame = CGRectMake(0,0,background.frame.size.width,background.frame.size.height+15);
+		//nav.navigationBar.frame = CGRectMake(-15,0,background.frame.size.width,background.frame.size.height);
+		//background.frame = CGRectMake(-15,0,background.frame.size.width,background.frame.size.height);
+		// UIView *bgview = MSHookIvar<UIView *>(nav.navigationBar, "_backgroundView");
+		// bgview = background;
 
-	[nav.navigationBar insertSubview:background atIndex:0];
+		[nav.navigationBar insertSubview:background atIndex:0];
+	}
+
+
+
+
 	//[nav.navigationBar addSubview:background];
 	// [nav.navigationBar setBarStyle:UIBarStyleBlack];
 	//[nav.navigationBar _setBarPosition:UIBarPositionTopAttached];
@@ -503,9 +545,6 @@ static void loadPrefs() {
 -(id)sectionIndexTitlesForTableView:(UITableView *)arg1 {
 	if(logging) %log;
 	if([self shouldDisplayListLauncher]) return indexValues;
-	// arg1.sectionIndexColor = [UIColor whiteColor]; // text color
-	// arg1.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
-	// arg1.sectionIndexBackgroundColor = [UIColor clearColor]; //bg touched
 	return nil;
 }
 
@@ -517,7 +556,17 @@ static void loadPrefs() {
 
 -(void)searchGesture:(id)arg1 completedShowing:(BOOL)arg2  {
 	if(logging) %log;
+
+	// https://github.com/Shrugs/ClearOnOpen with permission
+	if(clearResults) {
+		SBSearchHeader *sheader = MSHookIvar<SBSearchHeader *>([%c(SBSearchViewController) sharedInstance], "_searchHeader");
+		sheader.searchField.text = @"";
+		[self _searchFieldEditingChanged];
+	}
+
+
 	%orig;
+
 	if(arg2) {
 		[[%c(SBSearchViewController) sharedInstance] forceRotation];
 		UINavigationController *nav = MSHookIvar<UINavigationController *>([%c(SBSearchViewController) sharedInstance], "_navigationController");
@@ -529,10 +578,9 @@ static void loadPrefs() {
 		if(![[%c(SBSearchViewController) sharedInstance] _showingKeyboard] && !hideKeyboard) {
 			[[%c(SBSearchViewController) sharedInstance] _setShowingKeyboard:YES];	
 		}
-		[[%c(SBSearchViewController) sharedInstance] forceRotation];	
-
 		//[[%c(SBSearchViewController) sharedInstance] repositionCells];
 	}
+	
 }
 
 -(void)_setShowingKeyboard:(BOOL)arg1 {
@@ -576,10 +624,6 @@ static void loadPrefs() {
 		}
 		
 	}
-		
-	// arg1.sectionIndexColor = [UIColor whiteColor]; // text color
-	// arg1.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
-	// arg1.sectionIndexBackgroundColor = [UIColor clearColor]; //bg
 
 	return %orig;
 }
@@ -596,13 +640,14 @@ static void loadPrefs() {
 -(int)tableView:(UITableView *)tableview sectionForSectionIndexTitle:(id)title atIndex:(int)index {
 	if(logging) %log;
 
-	// tableview.sectionIndexColor = [UIColor whiteColor]; // text color
-	// tableview.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
-	// tableview.sectionIndexBackgroundColor = [UIColor clearColor]; //bg touched
-
 	int appSection = [enabledSections indexOfObject:@"Application List"];
 	int recentSection = [enabledSections indexOfObject:@"Recent"];
 	int favoriteSection = [enabledSections indexOfObject:@"Favorites"];
+
+
+	SBSearchHeader *sheader = MSHookIvar<SBSearchHeader *>([%c(SBSearchViewController) sharedInstance], "_searchHeader");
+	[sheader.searchField resignFirstResponder];
+
 
 	if([title isEqual:@"▢"]) {
 		return recentSection;
@@ -613,6 +658,9 @@ static void loadPrefs() {
 		[tableview scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:[[indexPositions objectAtIndex:index] integerValue] inSection:appSection] atScrollPosition:UITableViewScrollPositionTop animated:NO];
 		return 99999999; // this allows for scrolling without jumping to some random ass section
 	}
+
+
+
 
 	return index;
 }
@@ -652,12 +700,14 @@ static void loadPrefs() {
 		
 
 		NSString *name = @"";
-		if ([nameCache objectForKey:identifier] == nil) { // Thanks @daementor 
-			[nameCache setObject:[applicationList valueForKey:@"displayName" forDisplayIdentifier:identifier] forKey:identifier];
+		if ([nameCache objectForKey:identifier] == nil) { // Thanks @daementor
+			NSString *value = [applicationList valueForKey:@"displayName" forDisplayIdentifier:identifier]; 
+			NSString *newValue = value?value:@"";
+			[nameCache setObject:newValue forKey:identifier];
 		}
 		name = [nameCache objectForKey:identifier];
 
-		SBSearchImageCell *cell = [arg1 dequeueReusableCellWithIdentifier:@"searchlight"];
+		SBSearchStandardCell *cell = [arg1 dequeueReusableCellWithIdentifier:@"searchlight"];
 
 		if(cell == nil) {
 			//[%c(SBSearchImageCell) initialize];
@@ -675,26 +725,70 @@ static void loadPrefs() {
 			// textLabelFrame.size.width += 5;
 			// cell.textLabel.frame = textLabelFrame;
 			// [cell setNeedsLayout];
+    		[cell clipToTopHeaderWithHeight:52.0f inTableView:arg1];
+    		cell.layer.masksToBounds = YES;
+
+
+
 			UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(48.0f, 3.0f, 150.0f, 20.0f)];
 			lbl.text = name;
 			lbl.tag = 666;
 			lbl.textColor = [UIColor whiteColor];
 			[cell.leftView addSubview:lbl];
+			//[cell.clippingContainer addSubview:lbl];
+
+			
 
 			UIImageView *imgView = [[UIImageView alloc] initWithFrame:CGRectMake(-1.0f, -8.0f, 41.5f, 41.5f)];
 			imgView.tag = 667;
 			[cell.leftView addSubview:imgView];
+
+			if(show_badges) {
+				cell.autoresizesSubviews = YES;
+				cell.leftView.autoresizesSubviews = YES;
+				UILabel *countlbl = [[UILabel alloc] initWithFrame:CGRectMake(cell.frame.size.width-75.0f,-12.0,50,50)];
+				countlbl.text = @"";
+				countlbl.tag = 668;
+				countlbl.textColor = [[UIColor whiteColor] colorWithAlphaComponent:0.5f];
+				countlbl.font=[countlbl.font fontWithSize:countlbl.font.pointSize - 6];
+				countlbl.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
+				[cell.leftView addSubview:countlbl];
+				//[cell.clippingContainer addSubview:countlbl];
+			}
+			//[cell.clippingContainer addSubview:imgView];
 			// Instead of doing this... can make a custom cell and do this: http://stackoverflow.com/a/4209039/193772
 			//UILabel *lbl = [[UILabel alloc] initWithFrame:CGRectMake(64.0f, 14.0f, 150.0f, 20.0f)];
-			
-
+			//[cell setBounds:CGRectMake(0.0f, 0.0f, cell.frame.size.width, cell.frame.size.height)];
 		}
-
 			
 			//UIImageView *imgView = [[UIImageView alloc] initWithFrame:CGRectMake(15.5f, 3.5f, 41.5f, 41.5f)];
-		CGRect cellFrame = cell.frame;
-		cellFrame.size.height = 20;
-		cell.frame = cellFrame;
+		// CGRect cellFrame = cell.frame;
+		// cellFrame.size.height = 20;
+		// cell.frame = cellFrame;
+
+		// cell.auxiliaryTitleLabel.text = @"title";
+		// cell.auxiliarySubtitleLabel.text = @"asubtitle";
+		// cell.subtitleLabel.text = @"subtitle";
+		// cell.summaryLabel.text = @"summary";
+		if(show_badges) {
+			UILabel *countlbl = (UILabel *)[cell.leftView viewWithTag:668];
+			SBIconController *cont = [%c(SBIconController) sharedInstance];
+			SBIconModel *model = [cont model];
+			SBIcon *sicon = [model expectedIconForDisplayIdentifier:identifier];
+			NSLog(@"icon = %@",sicon);
+			NSLog(@"badge = %@",[sicon badgeNumberOrString]);
+			//NSLog(@"badge class = @",[[sicon badgeNumberOrString] className]);
+			if([sicon badgeNumberOrString]) {
+				if([[sicon badgeNumberOrString] isKindOfClass:[NSNumber class]]) {
+					if([[sicon badgeNumberOrString] intValue] > 0)
+						[countlbl setText:[[sicon badgeNumberOrString] stringValue]];
+				}
+			}
+	    	else {
+	    		[countlbl setText:@""];
+	    	}
+		}	
+
 
 		CGRect labelFrame = cell.titleLabel.frame;
 		labelFrame.origin.y = 10.0f;
@@ -716,7 +810,13 @@ static void loadPrefs() {
     	UIGraphicsBeginImageContextWithOptions(rect.size, NO, 0.0);
     	// CGContextRef context = UIGraphicsGetCurrentContext();
     	// CGContextSetInterpolationQuality(context, kCGInterpolationHigh);
-	    UIImage *icon = [applicationList iconOfSize:12 forDisplayIdentifier:identifier];
+	    UIImage *icon = nil;
+		if ([smallIconCache objectForKey:identifier] == nil) { // Thanks @daementor
+			UIImage *tempIcon =  [applicationList iconOfSize:12 forDisplayIdentifier:identifier];
+			UIImage *goodIcon = (tempIcon?tempIcon:UIGraphicsGetImageFromCurrentImageContext());
+			[smallIconCache setObject:goodIcon forKey:identifier];
+		}
+		icon = [smallIconCache objectForKey:identifier];
 	 	//cell.titleImageView.image = icon; 
 		//cell.imageView.image = icon;
 	    [icon drawInRect:rect];
@@ -730,11 +830,17 @@ static void loadPrefs() {
 
     	UIImageView *imgView = (UIImageView *)[cell.leftView viewWithTag:667];
 
-	    rect = CGRectMake(0,0,35,35);
+	    rect = CGRectMake(0,0,34,34);
     	UIGraphicsBeginImageContextWithOptions(rect.size, NO, 0.0);
     	// CGContextRef context = UIGraphicsGetCurrentContext();
     	// CGContextSetInterpolationQuality(context, kCGInterpolationHigh);
-	    icon = [applicationList iconOfSize:49 forDisplayIdentifier:identifier];
+	    icon = nil;
+		if ([largeIconCache objectForKey:identifier] == nil) { // Thanks @daementor
+			UIImage *tempIcon = [applicationList iconOfSize:64 forDisplayIdentifier:identifier]; 
+			UIImage *goodIcon = tempIcon?tempIcon:UIGraphicsGetImageFromCurrentImageContext();
+			[largeIconCache setObject:goodIcon forKey:identifier];
+		}
+		icon = [largeIconCache objectForKey:identifier];
 	 	//cell.titleImageView.image = icon; 
 		//cell.imageView.image = icon;
 	    [icon drawInRect:rect];
@@ -743,15 +849,16 @@ static void loadPrefs() {
 
 	    imgView.image = img;
 
-	    
-
-    	[cell clipToTopHeaderWithHeight:66.0f inTableView:arg1];
+    	[cell clipToTopHeaderWithHeight:52.0f inTableView:arg1];
 
     	NSLog(@"image frame = %@", NSStringFromCGRect(imgView.frame));
     	NSLog(@"cell frame = %@",NSStringFromCGRect(cell.frame));
     	NSLog(@"label frame = %@",NSStringFromCGRect(cell.titleLabel.frame));
-    	NSLog(@"constantConstraints = %@",cell.constantConstraints);
-    	NSLog(@"variableConstraints = %@",cell.variableConstraints);
+    	// NSLog(@"constantConstraints = %@",cell.constantConstraints);
+    	// NSLog(@"variableConstraints = %@",cell.variableConstraints);
+		NSLog(@"clipping container = %@",[[cell clippingContainer] subviews]);
+
+		[cell updateConstraints];
 		return cell;
 	}
 
@@ -830,6 +937,8 @@ static void loadPrefs() {
 		} else if([[enabledSections objectAtIndex:arg2] isEqual:@"Recent"]) {
 			[header setTitle:recentName];
 		}
+		header.clipsToBounds = YES;
+
 	}
 	//NSLog(@"%@",[header recursiveDescription]);
 	//NSLog(@"header background view = %@",[arg1 _tableHeaderBackgroundView]);
@@ -923,25 +1032,22 @@ static void loadPrefs() {
 	SBSearchViewController *sview = [%c(SBSearchViewController) sharedInstance];
 	//[sview _updateTableContents];
 	UITableView *stable = MSHookIvar<UITableView *>(sview, "_tableView");
-	stable.sectionIndexColor = [UIColor whiteColor]; // text color
-	stable.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
-	stable.sectionIndexBackgroundColor = [UIColor clearColor]; //bg
 	[stable reloadData];
 }
 %end
 
-%hook UITextField
--(void)_becomeFirstResponder {
-	%orig; 
-	SBSearchHeader *sheader = MSHookIvar<SBSearchHeader *>([%c(SBSearchViewController) sharedInstance], "_searchHeader");
-	UITextField *tfield = [sheader searchField];
-	if(selectall && self == tfield) {
-		if(![tfield.text isEqual:@""]) {
-			[tfield selectAll:[%c(SBSearchViewController) sharedInstance]];
-		}
-	}
-}
-%end
+// %hook UITextField
+// -(void)_becomeFirstResponder {
+// 	%orig; 
+// 	SBSearchHeader *sheader = MSHookIvar<SBSearchHeader *>([%c(SBSearchViewController) sharedInstance], "_searchHeader");
+// 	UITextField *tfield = [sheader searchField];
+// 	if(selectall && self == tfield) {
+// 		if(![tfield.text isEqual:@""]) {
+// 			[tfield selectAll:[%c(SBSearchViewController) sharedInstance]];
+// 		}
+// 	}
+// }
+// %end
 
 %hook SBLockScreenManager
 -(void)_finishUIUnlockFromSource:(int)arg1 withOptions:(id)arg2 {
@@ -1004,14 +1110,42 @@ static void loadPrefs() {
 // }
 // %end
 
-// %hook SBSearchStandardCell
-// -(float)leftTextMargin {
-// 	return 44.0f;
-// }
-// -(float)leftMargin {
-// 	return 44;
+// %hook SBSearchImageCell
+// -(void)clipToTopHeaderWithHeight:(double)arg1 inTableView:(id)arg2 {
+// 	%log;
+// 	// if(arg1 < 52) {
+// 	// 	%orig(65.0f,arg2);
+// 	// } else {
+// 	// 	%orig;
+// 	// }
+// 	%orig;
 // }
 // %end;
+
+%hook SBSearchTableViewCell 
+-(id)initWithStyle:(long long)arg1 reuseIdentifier:(id)arg2 {
+	if(logging) %log;
+	return %orig;
+}
+// -(void)clipToTopHeaderWithHeight:(double)arg1 inTableView:(id)arg2 {
+// 	%log;
+// 	%orig;
+// }
+%end
+
+
+%hook SBSearchStandardCell
+-(id)initWithStyle:(long long)arg1 reuseIdentifier:(id)arg2 {
+	if(logging) %log;
+	return %orig;
+}
+// -(void)clipToTopHeaderWithHeight:(double)arg1 inTableView:(id)arg2 {
+// 	%log;
+// 	%orig;
+// }
+%end
+
+
 
 %hook SBSearchImageCell
 // +(id)placeHolderImageForDomain:(unsigned)arg1 result:(id)arg2 size:(CGSize)arg3 {
@@ -1019,14 +1153,27 @@ static void loadPrefs() {
 // 	return %orig;
 // }
 
+- (void)layoutSubviews {
+    %orig;
+    self.layer.masksToBounds = YES;
+    self.layer.mask.frame = self.bounds;
+}
+
+- (void)setBounds:(CGRect)bounds
+{
+    %orig;
+
+    self.layer.masksToBounds = YES;
+}
+
  -(id)initWithStyle:(int)arg1 reuseIdentifier:(id)arg2 {
-	%log;
-	SBSearchImageCell *cell = %orig;
-	NSLog(@"clipping container = %@",[[cell clippingContainer] subviews]);
+	if(logging) %log;
+	//SBSearchImageCell *cell = %orig;
+	//NSLog(@"clipping container = %@",[[cell clippingContainer] subviews]);
 	return %orig;
 }
 -(id)dequeueReusableCellWithIdentifier:(id)arg1 {
-	%log; 
+	if(logging) %log; 
 	//SBSearchImageCell *cell = %orig;
 	//NSLog(@"cell orig frame = (%f,%f,%f,%f)", cell.frame.origin.x, cell.frame.origin.y, cell.frame.size.width, cell.frame.size.height);
 	return %orig;
@@ -1173,8 +1320,10 @@ static void loadPrefs() {
 		originalWindow = MSHookIvar<UIWindow *>([%c(SBSearchViewController) sharedInstance], "_presentingWindow");
 		NSLog(@"presenting Window = %@", originalWindow);
 		UINavigationController *nc = MSHookIvar<UINavigationController *>([%c(SBSearchViewController) sharedInstance], "_navigationController");
-	NSLog(@"main Nav Controller = %@",nc);
+		NSLog(@"main Nav Controller = %@",nc);
 	}
+
+
 	//[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:YES withPushDown:20];
 	
 }
@@ -1213,13 +1362,17 @@ static void loadPrefs() {
 	if(logging) NSLog(@"orig complete.");
 
 	if ([(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked] || [[%c(SBUIController) sharedInstance] isAppSwitcherShowing]) {
+		if(logging) NSLog(@"is locked or is app switcher");
 		[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController dismissViewControllerAnimated:YES completion:^{}];
 		
 		if(gesTargetview) {
+			if(logging) NSLog(@"has gesTargetView");
 			SBSearchGesture *ges = [%c(SBSearchGesture) sharedInstance];
    			[ges setTargetView:gesTargetview];
 		}
 		if(fv) {
+			if(logging) NSLog(@"has fv");
+
 			UIView *outview = MSHookIvar<UIView *>(vcont, "_view");
 			[fv addSubview:outview];
 			// for(id view in [outview subviews]) {
@@ -1230,6 +1383,8 @@ static void loadPrefs() {
 
 
     if(window) {
+    	if(logging) NSLog(@"has window");
+
 		[vcont _fadeForLaunchWithDuration:0.3f completion:^void{
 			SBSearchGesture *ges = [%c(SBSearchGesture) sharedInstance];
 	   		[ges setTargetView:gesTargetview];
@@ -1244,6 +1399,7 @@ static void loadPrefs() {
 		}];
 	}
 
+
 	if(applicationIdentifier) {
 		if(logging) {
 			NSLog(@"about to launch = %@",applicationIdentifier);
@@ -1256,6 +1412,9 @@ static void loadPrefs() {
 		}
 	}
 	applicationIdentifier = nil;
+
+	if(logging) NSLog(@"done with resetAnimatd");
+
 	
 }
 %end

@@ -79,6 +79,20 @@
 -(void)clearonopen {
 	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"cydia://package/com.mattcmultimedia.clearonopen"]];
 }
+
+-(void)smartsearchr {
+	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"cydia://package/ca.cykey.smartsearch"]];
+}
+
+-(void)meme {
+	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"cydia://package/red.dingo.meme"]];
+}
+
+-(void)spotlightgoogle {
+	[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"cydia://package/com.vasuchawla.spotlightgoogle"]];
+}
+
+
 @end
 
 

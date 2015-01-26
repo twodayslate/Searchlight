@@ -22,6 +22,7 @@
 @end
 
 @interface SBSearchTableView : UITableView
+@property(nonatomic) float contentInset;
 @end
 
 @interface SBSearchViewController : UIViewController 
@@ -54,6 +55,16 @@
 -(void)setHeaderbyChangingFrame:(bool)changeFrame withPushDown:(int)pushDown;
 -(void)show;
 -(void)createToShow;
+-(void)_searchFieldEditingChanged;
+-(void)_updateClipping;
+-(void)_updateCellClipping:(id)arg1 ;
+- (void)maskCell:(UITableViewCell *)cell fromTopWithMargin:(CGFloat)margin;
+- (CAGradientLayer *)visibilityMaskForCell:(UITableViewCell *)cell withLocation:(CGFloat)location;
+@end
+
+@interface NSConcreteNotification
++(id)notificationWithName:(id)arg1 object:(id)arg2 ;
+-(id)initWithName:(id)arg1 object:(id)arg2 userInfo:(id)arg3 ;
 @end
 
 @interface SBSearchHeader : UIView
@@ -134,6 +145,7 @@
 
 @interface SBIcon
 -(void)launchFromLocation:(int)arg1 ;
+-(id)badgeNumberOrString;
 @end
 
 @interface SBApplicationIcon : SBIcon
@@ -275,15 +287,27 @@
 -(void)updateConstraints;
 -(void)clipToTopHeaderWithHeight:(float)arg1 inTableView:(id)arg2 ;
 -(UIView *)clippingContainer;
+- (void)maskCellFromTop:(CGFloat)margin;
+- (CAGradientLayer *)visibilityMaskWithLocation:(CGFloat)location;
+@property (nonatomic,readonly) NSArray * constantConstraints; 
+@property (nonatomic,readonly) NSArray * variableConstraints; 
 @end
 
 @interface SBSearchStandardCell : SBSearchTableViewCell
 @property (nonatomic,readonly) UILabel* titleLabel; 
++(id)unreadImage;
+@property (nonatomic,readonly) UIImageView * vipBadge;                           //@synthesize vipBadge=_vipBadge - In the implementation block
 -(float)leftTextMargin;
 -(void)updateLabel:(id)arg1 withValue:(id)arg2 ;
 -(void)updateFonts;
 -(id)leftTextView;
 -(UIView *)leftView;
+@property (nonatomic,readonly) UILabel * auxiliaryTitleLabel;                    //@synthesize auxiliaryTitleLabel=_auxiliaryTitleLabel - In the implementation block
+@property (nonatomic,readonly) UILabel * auxiliarySubtitleLabel; 
+@property (nonatomic,readonly) UILabel * subtitleLabel; 
+@property (nonatomic,readonly) UILabel * summaryLabel; 
+@property (nonatomic,readonly) UIImageView * unreadBadge;                        //@synthesize unreadBadge=_unreadBadge - In the implementation block
+
 @end
 
 @interface SBSearchImageCell : SBSearchStandardCell  {

@@ -17,8 +17,7 @@ static int headerStyle = 2060;
 static bool logging, hideKeyboard, selectall, resize_header, replace_nc, show_badges, clearResults, changeHeader = false;
 static bool force_rotation, ls_enabled, blur_section_header_enabled = true;
 static NSCache *nameCache = [NSCache new];
-static NSCache *smallIconCache = [NSCache new];
-static NSCache *largeIconCache = [NSCache new];
+static NSCache *iconCache = [NSCache new];
 
 static NSMutableArray *indexValues = nil;
 static NSMutableArray *indexPositions = nil; 
@@ -165,8 +164,14 @@ static void loadPrefs() {
 	applicationListName = [settings objectForKey:@"applicationListName"] ?: applicationListName; applicationListName = [applicationListName isEqual:@""] ? @"APPLICATION LIST" : applicationListName;
 	favoritesName = [settings objectForKey:@"favoriteName"] ?: favoritesName; favoritesName = [favoritesName isEqual:@""] ? @"FAVORITES" : favoritesName;
 
-	sortedDisplayIdentifiers = [[[applicationList.applications allKeys] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
-	    return [[applicationList.applications objectForKey:obj1] caseInsensitiveCompare:[applicationList.applications objectForKey:obj2]];}] retain];
+
+	//sortedDisplayIdentifiers = [[[applicationList.applications allKeys] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+	//    return [[applicationList.applications objectForKey:obj1] caseInsensitiveCompare:[applicationList.applications objectForKey:obj2]];}] retain];
+
+	NSDictionary *tempApplications = applicationList.applications;
+	sortedDisplayIdentifiers = [[[tempApplications allKeys] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+	   return [[tempApplications objectForKey:obj1] caseInsensitiveCompare:[tempApplications objectForKey:obj2]];}] retain];
+
 
 	setApplicationListDisplayIdentifiers(settings);
 
@@ -178,10 +183,7 @@ static void loadPrefs() {
 
 	if(logging) NSLog(@"Done creating alphabet");
 	
-	SBSearchViewController *sview = [%c(SBSearchViewController) sharedInstance];
-	//[sview _updateTableContents];
-	UITableView *stable = MSHookIvar<UITableView *>(sview, "_tableView");
-	[stable reloadData];
+	
 
 	generateAppList();
 
@@ -206,6 +208,14 @@ static void loadPrefs() {
 	if(logging) NSLog(@"Done with settings");
 }
 
+static void savePrefs() {
+	loadPrefs();
+	SBSearchViewController *sview = [%c(SBSearchViewController) sharedInstance];
+	//[sview _updateTableContents];
+	UITableView *stable = MSHookIvar<UITableView *>(sview, "_tableView");
+	[stable reloadData];
+}
+
 
 
 %hook SBNotificationCenterViewController
@@ -213,6 +223,23 @@ static void loadPrefs() {
 	if(!replace_nc) %orig;
 }
 %end
+
+// %hook SBBacklightController
+// -(double)_currentLockScreenIdleTimerInterval {
+//     if(logging) %log;
+//     NSLog(@"orig = %f",(float)%orig);
+// 	return %orig;
+// }
+
+// -(void)_resetLockScreenIdleTimerWithDuration:(double)delay mode:(int)mode {
+//     if(logging) %log;
+//     NSLog(@"_currentLockScreenIdleTimerInterval = %f",(float)[self _currentLockScreenIdleTimerInterval]);
+// 	%orig;
+// }
+// %end
+
+
+
 
 %hook SBNotificationCenterController
 -(void)beginPresentationWithTouchLocation:(CGPoint)arg1 {
@@ -242,6 +269,12 @@ static void loadPrefs() {
 
 %hook SBSearchViewController
 
+-(void)_searchFieldEditingChanged {
+	if(logging) %log;
+	%orig;
+	[[%c(SBBacklightController) sharedInstance] resetLockScreenIdleTimer];
+}
+
 -(void)_keyboardWillChangeFrame:(id)arg1 {
 	if(logging) %log;
 	%orig;
@@ -253,25 +286,30 @@ static void loadPrefs() {
 	%orig;
 }
 
-// -(void)scrollViewDidScroll:(id)arg1 {
-// 	if(logging) %log;
-// 	%orig;
-// 	[self _updateClipping];
+-(void)scrollViewDidScroll:(id)arg1 {
+	if(logging) %log;
+	%orig;
 
-// 	SBSearchTableView *table = MSHookIvar<SBSearchTableView *>(self, "_tableView");
-// 	for (SBSearchTableViewCell *cell in table.visibleCells) {
-// 		NSLog(@"clipping container = %@",[[cell clippingContainer] subviews]);
-// 		[self _updateCellClipping:[%c(NSConcreteNotification) notificationWithName:@"UpdateMyClipping" object:cell]];
-// 		[cell clipToTopHeaderWithHeight:52.0f inTableView:table];
-// 		CGFloat hiddenFrameHeight = table.contentOffset.y + self.navigationController.navigationBar.frame.size.height - cell.frame.origin.y;
-//         if (hiddenFrameHeight >= 0 || hiddenFrameHeight <= cell.frame.size.height) {
-//             [self maskCell:cell fromTopWithMargin:hiddenFrameHeight];
-//         }
-//         [cell updateConstraints];
-// 	}
+	// if() {
+	// 	[%c(SBBacklightController) sharedInstance]
+	// }
 
-// 	//table.contentInset = 52.0f;
-// }
+	// [self _updateClipping];
+
+	// SBSearchTableView *table = MSHookIvar<SBSearchTableView *>(self, "_tableView");
+	// for (SBSearchTableViewCell *cell in table.visibleCells) {
+	// 	NSLog(@"clipping container = %@",[[cell clippingContainer] subviews]);
+	// 	[self _updateCellClipping:[%c(NSConcreteNotification) notificationWithName:@"UpdateMyClipping" object:cell]];
+	// 	[cell clipToTopHeaderWithHeight:52.0f inTableView:table];
+	// 	CGFloat hiddenFrameHeight = table.contentOffset.y + self.navigationController.navigationBar.frame.size.height - cell.frame.origin.y;
+ //        if (hiddenFrameHeight >= 0 || hiddenFrameHeight <= cell.frame.size.height) {
+ //            [self maskCell:cell fromTopWithMargin:hiddenFrameHeight];
+ //        }
+ //        [cell updateConstraints];
+	// }
+
+	//table.contentInset = 52.0f;
+}
 
 // %new
 // - (void)maskCell:(SBSearchTableViewCell *)cell fromTopWithMargin:(CGFloat)margin
@@ -746,7 +784,7 @@ static void loadPrefs() {
 			if(show_badges) {
 				cell.autoresizesSubviews = YES;
 				cell.leftView.autoresizesSubviews = YES;
-				UILabel *countlbl = [[UILabel alloc] initWithFrame:CGRectMake(cell.frame.size.width-75.0f,-12.0,50,50)];
+				UILabel *countlbl = [[UILabel alloc] initWithFrame:CGRectMake(cell.frame.size.width-75.0f,-11.0,50,50)];
 				countlbl.text = @"";
 				countlbl.tag = 668;
 				countlbl.textColor = [[UIColor whiteColor] colorWithAlphaComponent:0.5f];
@@ -811,12 +849,12 @@ static void loadPrefs() {
     	// CGContextRef context = UIGraphicsGetCurrentContext();
     	// CGContextSetInterpolationQuality(context, kCGInterpolationHigh);
 	    UIImage *icon = nil;
-		if ([smallIconCache objectForKey:identifier] == nil) { // Thanks @daementor
-			UIImage *tempIcon =  [applicationList iconOfSize:12 forDisplayIdentifier:identifier];
+		if ([iconCache objectForKey:identifier] == nil) { // Thanks @daementor
+			UIImage *tempIcon =  [applicationList iconOfSize:64 forDisplayIdentifier:identifier];
 			UIImage *goodIcon = (tempIcon?tempIcon:UIGraphicsGetImageFromCurrentImageContext());
-			[smallIconCache setObject:goodIcon forKey:identifier];
+			[iconCache setObject:goodIcon forKey:identifier];
 		}
-		icon = [smallIconCache objectForKey:identifier];
+		icon = [iconCache objectForKey:identifier];
 	 	//cell.titleImageView.image = icon; 
 		//cell.imageView.image = icon;
 	    [icon drawInRect:rect];
@@ -834,13 +872,6 @@ static void loadPrefs() {
     	UIGraphicsBeginImageContextWithOptions(rect.size, NO, 0.0);
     	// CGContextRef context = UIGraphicsGetCurrentContext();
     	// CGContextSetInterpolationQuality(context, kCGInterpolationHigh);
-	    icon = nil;
-		if ([largeIconCache objectForKey:identifier] == nil) { // Thanks @daementor
-			UIImage *tempIcon = [applicationList iconOfSize:64 forDisplayIdentifier:identifier]; 
-			UIImage *goodIcon = tempIcon?tempIcon:UIGraphicsGetImageFromCurrentImageContext();
-			[largeIconCache setObject:goodIcon forKey:identifier];
-		}
-		icon = [largeIconCache objectForKey:identifier];
 	 	//cell.titleImageView.image = icon; 
 		//cell.imageView.image = icon;
 	    [icon drawInRect:rect];
@@ -1450,7 +1481,7 @@ static void loadPrefs() {
 	dlopen("/Library/MobileSubstrate/DynamicLibraries/SmartSearch.dylib", RTLD_NOW);
     //CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("org.thebigboss.listlauncher7/settingschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
     
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("org.thebigboss.searchlight/saved"), NULL, CFNotificationSuspensionBehaviorCoalesce);
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)savePrefs, CFSTR("org.thebigboss.searchlight/saved"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 
     //loadPrefs();
     NSLog(@"Done loading ListLauncher7!");

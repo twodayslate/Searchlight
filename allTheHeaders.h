@@ -370,3 +370,10 @@
 +(id)sharedInstance;
 -(id)allApplications;
 @end
+
+@interface SBBacklightController
+- (void)_resetLockScreenIdleTimerWithDuration:(double)delay mode:(int)mode;
+- (double)_currentLockScreenIdleTimerInterval;
+-(id)sharedInstance;
+-(void)resetLockScreenIdleTimer;
+@end

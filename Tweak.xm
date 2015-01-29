@@ -693,6 +693,7 @@ static void savePrefs() {
 		return favoriteSection;
 	} else {
 		if(logging) NSLog(@"jump to (%@,%d) for title %@ at index %d",[indexPositions objectAtIndex:index],(int)appSection,title,index);
+		if([title isEqualToString:@"#"]) return appSection;
 		[tableview scrollToRowAtIndexPath:[NSIndexPath indexPathForRow:[[indexPositions objectAtIndex:index] integerValue] inSection:appSection] atScrollPosition:UITableViewScrollPositionTop animated:NO];
 		return 99999999; // this allows for scrolling without jumping to some random ass section
 	}

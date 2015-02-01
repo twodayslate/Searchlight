@@ -3,7 +3,7 @@
 
 static NSString *plistPath = @"/var/mobile/Library/Preferences/org.thebigboss.searchlight.plist";
 #define exampleTweakPreferencePath @"/var/mobile/Library/Preferences/org.thebigboss.searchlight.plist"
-static NSString *name = @"myfavorites";
+static NSString *name = @"Favorites";
 static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.searchlight/reloadTable", kCFStringEncodingMacRoman);
 //extern NSString* PSDeletionActionKey;
 
@@ -90,8 +90,8 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
         [tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationLeft];
         NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
 		[settings writeToFile:plistPath atomically:YES];
-		NSString *name = [_favoriteList objectAtIndex:indexPath.row];
-		NSLog(@"deleting = %@",name);
+		NSString *appname = [_favoriteList objectAtIndex:indexPath.row];
+		NSLog(@"deleting = %@",appname);
 
 		NSLog(@"favoriteList before: = %@",_favoriteList);
 
@@ -224,13 +224,13 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 	NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
 	[settings writeToFile:plistPath atomically:YES];
 	NSLog(@"inside moveRow message");
-	NSString *name = [_favoriteList objectAtIndex:fromIndex.row];
-	NSLog(@"moving = %@",name);
+	NSString *appname = [_favoriteList objectAtIndex:fromIndex.row];
+	NSLog(@"moving = %@",appname);
 
 	NSLog(@"favoriteList before: = %@",_favoriteList);
 
 	[_favoriteList removeObjectAtIndex:fromIndex.row];
-	[_favoriteList insertObject:name atIndex:toIndex.row];
+	[_favoriteList insertObject:appname atIndex:toIndex.row];
 
 	NSLog(@"favoriteList right after removal/addition = %@",_favoriteList);
 

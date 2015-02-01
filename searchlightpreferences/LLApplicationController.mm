@@ -33,6 +33,9 @@ static NSString *name = @"Application List";
 
 		[firstSpecifier release];
 	}
+
+	self.title = @"Applications";
+
 	return _specifiers;
 }
 

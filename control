@@ -1,7 +1,7 @@
 Package: org.thebigboss.searchlight
 Name: Searchlight
 Depends: mobilesubstrate, applist
-Conflict: com.mattcmultimedia.clearonopen
+Conflicts: com.mattcmultimedia.clearonopen
 Version: 1.04
 Architecture: iphoneos-arm
 Description: System search and applicaiton launcher

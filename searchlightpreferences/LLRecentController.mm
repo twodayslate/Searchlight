@@ -17,6 +17,7 @@ static NSString *name = @"Recent";
 		
 		[firstSpecifier release];
 	}
+	self.title = @"Recent";
 	return _specifiers;
 }
 

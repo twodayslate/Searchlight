@@ -3,8 +3,9 @@
 
 static NSString *plistPath = @"/var/mobile/Library/Preferences/org.thebigboss.searchlight.plist";
 #define exampleTweakPreferencePath @"/var/mobile/Library/Preferences/org.thebigboss.searchlight.plist"
-static NSString *name = @"Favorites";
+static NSString *name = @"myfavorites";
 static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.searchlight/reloadTable", kCFStringEncodingMacRoman);
+//extern NSString* PSDeletionActionKey;
 
 @implementation LLFavoritesController
 - (id)specifiers {
@@ -21,19 +22,19 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 		//[firstSpecifier release];
 		
 		
-		_favoriteList = (NSMutableArray *) [settings valueForKey:@"favorites"];
+		_favoriteList = (NSMutableArray *) [settings valueForKey:@"myfavorites"];
 		
 		if(!_favoriteList) {
 			_favoriteList = [[NSMutableArray alloc] init];
 			
-			[settings setValue:_favoriteList forKey:@"favorites"];
+			[settings setValue:_favoriteList forKey:@"myfavorites"];
 			[settings writeToFile:plistPath atomically:YES];
 		}
 
 		NSLog(@"favoriteList before sort = %@",_favoriteList);
 
-		_favoriteList =  [[_favoriteList sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
-	    return 	[[obj1 objectAtIndex:1] integerValue] > [[obj2 objectAtIndex:1] integerValue]	;}] mutableCopy];
+		// _favoriteList =  [[_favoriteList sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+	 //    return 	[[obj1 objectAtIndex:1] integerValue] > [[obj2 objectAtIndex:1] integerValue]	;}] mutableCopy];
 	
 
 		
@@ -45,9 +46,12 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 			// int index = [_favoriteList indexOfObject:spec];
 			// [_favoriteList removeObjectAtIndex:index];
 			// [_favoriteList insertObject:@[ [spec objectAtIndex:0],[[NSNumber alloc] initWithInt:count] ] atIndex:index];
-			PSSpecifier* appSpecifier = [PSSpecifier preferenceSpecifierNamed:[_applicationList valueForKey:@"displayName" forDisplayIdentifier:[spec objectAtIndex:0]] target:self set:nil get:nil detail:nil cell:[PSTableCell cellTypeFromString:@"PSTitleCell"] edit:1];
-			[appSpecifier setIdentifier:[spec objectAtIndex:0]];
+			PSSpecifier* appSpecifier = [PSSpecifier preferenceSpecifierNamed:[_applicationList valueForKey:@"displayName" forDisplayIdentifier:spec] target:self set:nil get:nil detail:nil cell:[PSTableCell cellTypeFromString:@"PSTitleCell"] edit:1];
+			[appSpecifier setIdentifier:spec];
+			//[appSpecifier setProperty:NSStringFromSelector(@selector(removedSpecifier:)) forKey:PSDeletionActionKey];
+
 			[_specifiers insertObject:appSpecifier atIndex:[_specifiers count]];
+
 			//[appSpecifier release];
 			count++;
 		}
@@ -67,11 +71,51 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 	}
 
 	
-
+	self.title = @"Favorites";
 	NSLog(@"done with specifiers");
 
 	return _specifiers;
 }
+
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    // Return YES if you want the specified item to be editable.
+    return YES;
+}
+
+// Override to support editing the table view.
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (editingStyle == UITableViewCellEditingStyleDelete) {
+        //add code here for when you hit delete
+        NSLog(@"did delete");
+        [tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationLeft];
+        NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
+		[settings writeToFile:plistPath atomically:YES];
+		NSString *name = [_favoriteList objectAtIndex:indexPath.row];
+		NSLog(@"deleting = %@",name);
+
+		NSLog(@"favoriteList before: = %@",_favoriteList);
+
+		[_favoriteList removeObjectAtIndex:indexPath.row];
+
+		NSLog(@"favoriteList right after removal/addition = %@",_favoriteList);
+
+		// NSMutableArray *tempFavorites = [[@[] mutableCopy] retain];
+		// NSLog(@"tempFAvorites = %@",tempFavorites);
+		// NSLog(@"favoriteList = %@",_favoriteList);
+		// _favoriteList = tempFavorites;
+		// _favoriteList =  [[[_favoriteList sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+		//     return 	[[_favoriteList objectAtIndex:[_favoriteList indexOfObject:obj1]] objectAtIndex:1] > [[_favoriteList objectAtIndex:[_favoriteList indexOfObject:obj2]] objectAtIndex:1]	;}] mutableCopy] retain];
+
+		[settings setValue:_favoriteList forKey:@"myfavorites"];
+		NSLog(@"After changes in settings = %@",settings);
+		[settings writeToFile:plistPath atomically:YES];
+		//[name release];
+		tableView.allowsSelectionDuringEditing = YES; 
+		tableView.editing = YES;
+        [self reloadFavoritesTable:nil];
+    }    
+} 
+
 - (void)dealloc {	
 	[_favoriteList release];
 	[_applicationList release];
@@ -136,7 +180,7 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 
 -(void)flushSettings {
 	NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
-	_favoriteList = (NSMutableArray *) [settings valueForKey:@"favorites"];
+	_favoriteList = (NSMutableArray *) [settings valueForKey:@"myfavorites"];
 	//[settings release];
 }
 
@@ -148,6 +192,8 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 }
 
 - (UITableViewCellEditingStyle) tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath {
+	if(indexPath.section == 2)
+		return UITableViewCellEditingStyleDelete;
 	return UITableViewCellEditingStyleNone;
 }
 
@@ -188,22 +234,14 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 
 	NSLog(@"favoriteList right after removal/addition = %@",_favoriteList);
 
-	NSMutableArray *tempFavorites = [[@[] mutableCopy] retain];
-	for(int i = 0; i < [_favoriteList count]; i++) {
-		id spec = [[_favoriteList objectAtIndex:i] retain];
-		[tempFavorites insertObject:@[[spec objectAtIndex:0],[[NSNumber alloc] initWithInt:i]] atIndex:i];
-		// int index = [_favoriteList indexOfObject:spec];
-		// [_favoriteList removeObjectAtIndex:index];
-		// [_favoriteList insertObject:@[ [spec objectAtIndex:0],[[NSNumber alloc] initWithInt:count] ] atIndex:index];
-		// count++;
-	}
-	NSLog(@"tempFAvorites = %@",tempFavorites);
-	NSLog(@"favoriteList = %@",_favoriteList);
-	_favoriteList = tempFavorites;
-	_favoriteList =  [[[_favoriteList sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
-	    return 	[[_favoriteList objectAtIndex:[_favoriteList indexOfObject:obj1]] objectAtIndex:1] > [[_favoriteList objectAtIndex:[_favoriteList indexOfObject:obj2]] objectAtIndex:1]	;}] mutableCopy] retain];
+	// NSMutableArray *tempFavorites = [[@[] mutableCopy] retain];
+	// NSLog(@"tempFAvorites = %@",tempFavorites);
+	// NSLog(@"favoriteList = %@",_favoriteList);
+	// _favoriteList = tempFavorites;
+	// _favoriteList =  [[[_favoriteList sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+	//     return 	[[_favoriteList objectAtIndex:[_favoriteList indexOfObject:obj1]] objectAtIndex:1] > [[_favoriteList objectAtIndex:[_favoriteList indexOfObject:obj2]] objectAtIndex:1]	;}] mutableCopy] retain];
 
-	[settings setValue:_favoriteList forKey:@"favorites"];
+	[settings setValue:_favoriteList forKey:@"myfavorites"];
 	NSLog(@"After changes in settings = %@",settings);
 	[settings writeToFile:plistPath atomically:YES];
 	//[name release];
@@ -220,7 +258,7 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 	NSLog(@"indexPath = (%d,%d)",(int)indexPath.row,(int)indexPath.section);
 	if(indexPath.section == 2) {
 		NSLog(@"accessoryType = %d",(int)cell.accessoryType);
-		UIImage *icon = [_applicationList iconOfSize:59 forDisplayIdentifier:[[_favoriteList objectAtIndex:indexPath.row] objectAtIndex:0]];
+		UIImage *icon = [_applicationList iconOfSize:59 forDisplayIdentifier:[_favoriteList objectAtIndex:indexPath.row]];
 		cell.imageView.image = icon;
 	} else {
 		cell.editingAccessoryView = cell.accessoryView;
@@ -269,7 +307,20 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 @end
 
 
+
+
+
+
+
+
+
+
+
 @implementation LLFavoritesAddController
+
+NSMutableDictionary *defaults = nil;
+NSMutableArray *favoriteList = nil;
+
  - (id)specifiers {
 	if(_specifiers == nil) {
 		//_specifiers = [[self loadSpecifiersFromPlistName:@"LLFavoritesPref" target:self] retain];
@@ -284,7 +335,7 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 		NSLog(@"_sortedDisplayIdentifiers = %@",_sortedDisplayIdentifiers);
 
 		for(id spec in _sortedDisplayIdentifiers) {
-			PSSpecifier* firstSpecifier = [PSSpecifier preferenceSpecifierNamed:[_applicationList valueForKey:@"displayName" forDisplayIdentifier:spec] target:self set:@selector(setValue:forSpecifier:) get:@selector(getValueForSpecifier:) detail:nil cell:[PSTableCell cellTypeFromString:@"PSSwitchCell"] edit:1];
+			PSSpecifier* firstSpecifier = [PSSpecifier preferenceSpecifierNamed:[_applicationList valueForKey:@"displayName" forDisplayIdentifier:spec] target:self set:@selector(setPreferenceValue:specifier:) get:@selector(getValueForSpecifier:) detail:nil cell:[PSTableCell cellTypeFromString:@"PSSwitchCell"] edit:1];
 			[firstSpecifier setIdentifier:spec];
 			[_specifiers insertObject:firstSpecifier atIndex:[_specifiers count]];
 		}
@@ -300,10 +351,42 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 	return exampleTweakSettings[specifier.properties[@"key"]];
 }
  
--(void) setPreferenceValue:(id)value specifier:(PSSpecifier*)specifier {
-	NSMutableDictionary *defaults = [NSMutableDictionary dictionary];
-	[defaults addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:exampleTweakPreferencePath]];
-	[defaults setObject:value forKey:specifier.properties[@"key"]];
+-(void)setPreferenceValue:(id)value specifier:(PSSpecifier*)specifier {
+	NSLog(@"setPreferenceValue specifier = %@",specifier);
+	NSLog(@"specifier id = %@",[specifier identifier]);
+	NSLog(@"value = %@",value);
+
+	if(!defaults) {
+		defaults = [[NSMutableDictionary dictionary] retain];
+		[defaults addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:exampleTweakPreferencePath]];
+		//[defaults setObject:value forKey:specifier.properties[@"key"]];
+	}
+
+	if(!favoriteList) {
+		favoriteList = [[NSMutableArray arrayWithArray:[defaults valueForKey:@"myfavorites"]] retain];
+		if(!favoriteList) {
+			favoriteList = [[[NSMutableArray alloc] init] retain];
+		}
+	}
+	
+
+	NSLog(@"about to set");
+	if([value boolValue]) {
+		NSLog(@"inserting value %@",[specifier identifier]);
+		//if(![favoriteList containsObject:[specifier identifier]])
+		[favoriteList addObject:[specifier identifier]];
+	} else {
+		NSLog(@"removing value %@",[specifier identifier]);
+		[favoriteList removeObject:[specifier identifier]];
+		//[favoriteList removeObject:[specifier identifier]];
+	}
+
+	NSLog(@"setting value");
+
+	[defaults setValue:favoriteList forKey:@"myfavorites"];
+
+	NSLog(@"writing");
+
 	[defaults writeToFile:exampleTweakPreferencePath atomically:YES];
 	NSLog(@"written to file");
 	//NSDictionary *exampleTweakSettings = [NSDictionary dictionaryWithContentsOfFile:exampleTweakPreferencePath];
@@ -311,6 +394,9 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 	NSLog(@"created CFStringRef");
 	if(mikotoPost)
 		CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), mikotoPost, NULL, NULL, YES);
+	
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"reloadFavoritesTable" object:self userInfo:nil];
+
 	NSLog(@"posted notification");
 }
 
@@ -332,35 +418,34 @@ static CFStringRef aCFString = CFStringCreateWithCString(NULL, "org.thebigboss.s
 	NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
 	NSLog(@"specifier = %@",specifier);
 	NSLog(@"specifier id = %@",[specifier identifier]);
-	NSMutableArray *favoriteList = (NSMutableArray *) [settings valueForKey:@"favorites"];
+	NSMutableArray *favoriteList = (NSMutableArray *) [settings valueForKey:@"myfavorites"];
 	for(id spec in favoriteList) {
-		if([[spec objectAtIndex:0] isEqual:[specifier identifier]]) return @YES;
+		if([spec isEqual:[specifier identifier]]) return @YES;
 	}
 	return @NO;
 }
 
-- (void)setValue:(id)value forSpecifier:(PSSpecifier *)specifier {
-	NSLog(@"value = %@",value);
-	NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
-	NSMutableArray *favoriteList = (NSMutableArray *) [settings valueForKey:@"favorites"];
+// - (void)setValue:(id)value forSpecifier:(PSSpecifier *)specifier {
+// 	NSLog(@"value = %@",value);
+// 	NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:plistPath];
+// 	NSMutableArray *favoriteList = (NSMutableArray *) [settings valueForKey:@"myfavorites"];
 
-	if([value boolValue]) {
-		if(![favoriteList containsObject:[specifier identifier]])
-			[favoriteList addObject:@[[specifier identifier],[[NSNumber alloc] initWithInt:[favoriteList count]]]];
+// 	if([value boolValue]) {
+// 		if(![favoriteList containsObject:[specifier identifier]])
+// 			[favoriteList addObject:@[[specifier identifier],[[NSNumber alloc] initWithInt:[favoriteList count]]]];
 
-	} else {
-		for(int i = 0; i < [favoriteList count]; i++) {
-			id spec = [[favoriteList objectAtIndex:i] retain];
-			if([[spec objectAtIndex:0] isEqual:[specifier identifier]]) {
-				[favoriteList removeObject:spec];
-			}
-		}
-		//[favoriteList removeObject:[specifier identifier]];
-	}
-	[settings writeToFile:plistPath atomically:YES];
+// 	} else {
+// 		for(int i = 0; i < [favoriteList count]; i++) {
+// 			id spec = [[favoriteList objectAtIndex:i] retain];
+// 			if([[spec objectAtIndex:0] isEqual:[specifier identifier]]) {
+// 				[favoriteList removeObject:spec];
+// 			}
+// 		}
+// 		//[favoriteList removeObject:[specifier identifier]];
+// 	}
+// 	[settings writeToFile:plistPath atomically:YES];
 
-	NSLog(@"settings = %@",settings);
-	[[NSNotificationCenter defaultCenter] postNotificationName:@"reloadFavoritesTable" object:self userInfo:nil];
-
-}
+// 	NSLog(@"settings = %@",settings);
+// 	[[NSNotificationCenter defaultCenter] postNotificationName:@"reloadFavoritesTable" object:self userInfo:nil];
+// }
 @end

@@ -107,14 +107,14 @@ static void setApplicationListDisplayIdentifiers (NSMutableDictionary *settings)
 
 static void setFavorites (NSMutableDictionary *settings) {
 	if(logging) NSLog(@"inside setFavorites");
-	favoritesDisplayIdentifiers = [[[NSMutableArray alloc] init] retain];
-	NSMutableArray *favoriteList = [(NSMutableArray *) [settings valueForKey:@"favorites"] retain];
-	favoriteList =  [[favoriteList sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
-	    return 	[[obj1 objectAtIndex:1] integerValue] > [[obj2 objectAtIndex:1] integerValue]	;}] mutableCopy];
-	for(id spec in favoriteList) {
-		[favoritesDisplayIdentifiers insertObject:[spec objectAtIndex:0] atIndex:[favoritesDisplayIdentifiers count]];
-	}
-	[favoriteList release];
+	favoritesDisplayIdentifiers = [(NSMutableArray *) [settings valueForKey:@"myfavorites"] retain];
+	// NSMutableArray *favoriteList = [(NSMutableArray *) [settings valueForKey:@"favorites"] retain];
+	// favoriteList =  [[favoriteList sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+	//     return 	[[obj1 objectAtIndex:1] integerValue] > [[obj2 objectAtIndex:1] integerValue]	;}] mutableCopy];
+	// for(id spec in favoriteList) {
+	// 	[favoritesDisplayIdentifiers insertObject:[spec objectAtIndex:0] atIndex:[favoritesDisplayIdentifiers count]];
+	// }
+	// [favoriteList release];
 
 }
 
@@ -910,7 +910,7 @@ static void savePrefs() {
 	if(logging) %log;
 
     if ([self shouldDisplayListLauncher]) {
-    	[self dismiss];
+    	[self dismissAnimated:YES completionBlock:^{}];
 
     	NSString *identifier = @"";
 
@@ -1413,6 +1413,7 @@ static void savePrefs() {
 		}
 	}
 
+	if(logging) NSLog(@"about to check window.");
 
     if(window) {
     	if(logging) NSLog(@"has window");

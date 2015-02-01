@@ -24,8 +24,6 @@
 			<string>org.thebigboss.searchlight</string>
 		</dict>
 
-
-
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>

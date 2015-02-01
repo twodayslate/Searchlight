@@ -60,6 +60,8 @@
 -(void)_updateCellClipping:(id)arg1 ;
 - (void)maskCell:(UITableViewCell *)cell fromTopWithMargin:(CGFloat)margin;
 - (CAGradientLayer *)visibilityMaskForCell:(UITableViewCell *)cell withLocation:(CGFloat)location;
+-(void)dismissAnimated:(BOOL)arg1 completionBlock:(/*^block*/id)arg2 ;
+
 @end
 
 @interface NSConcreteNotification

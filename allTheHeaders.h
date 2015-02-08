@@ -95,13 +95,17 @@
 -(int)interfaceOrientationForCurrentDeviceOrientation;
 -(void)noteInterfaceOrientationChanged:(int)arg1 duration:(float)arg2 ;
 -(id)_accessibilityFrontMostApplication;
--(id)_accessibilityFrontMostApplication;
+-(id)_accessibilityTopDisplay;
+-(id)_accessibilityRunningApplications;
 -(int)_frontMostAppOrientation;
 -(void)_revealSpotlight;
+
 @end
 
 @interface UIApplication (extras)
 -(id)_accessibilityFrontMostApplication;
+-(id)_accessibilityTopDisplay;
+-(id)_accessibilityRunningApplications;
 -(BOOL)launchApplicationWithIdentifier:(id)arg1 suspended:(BOOL)arg2 ;
 @end
 

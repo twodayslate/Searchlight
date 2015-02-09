@@ -12,6 +12,7 @@
 
 @interface UIViewController (extras)
 @property (getter=_window,nonatomic,readonly) UIWindow * window;
+@property(nonatomic, assign) id< UIViewControllerTransitioningDelegate > transitioningDelegate;
 -(id)viewControllerForRotation;
 -(unsigned)supportedInterfaceOrientations;
 -(id)_embeddedDelegate;
@@ -25,7 +26,13 @@
 @property(nonatomic) float contentInset;
 @end
 
-@interface SBSearchViewController : UIViewController 
+@interface CustomTransitionAnimator : NSObject <UIViewControllerAnimatedTransitioning>
+
+@property (nonatomic, assign, getter = isPresenting) BOOL presenting;
+
+@end
+
+@interface SBSearchViewController : UIViewController <UIViewControllerTransitioningDelegate>
 +(id)sharedInstance;
 -(BOOL)shouldDisplayListLauncher;
 -(void)searchGesture:(id)arg1 changedPercentComplete:(float)arg2;
@@ -84,7 +91,6 @@
 
 @interface SpringBoard
 -(void)_menuButtonUp:(id)arg1;
--(void)_revealSpotlight;
 -(void)quitTopApplication:(id)arg1 ;
 -(void)applicationSuspend:(id)arg1 ;
 -(BOOL)isLocked;
@@ -107,6 +113,7 @@
 -(id)_accessibilityTopDisplay;
 -(id)_accessibilityRunningApplications;
 -(BOOL)launchApplicationWithIdentifier:(id)arg1 suspended:(BOOL)arg2 ;
+-(void)_revealSpotlight;
 @end
 
 @interface SBSearchResultsBackdropView : UIView

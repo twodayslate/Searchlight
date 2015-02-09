@@ -30,7 +30,7 @@ static SBRootFolderView *fv = nil;
 static SBRootFolderController *fvd = nil;
 static UIView *gesTargetview = nil;
 
-static bool didAddViewController = NO;
+static bool didAddViewController, didNotAddViewController, statusBarWasHidden = NO;
 
 
 static void createAlphabet() {
@@ -219,7 +219,75 @@ static void savePrefs() {
 	[stable reloadData];
 }
 
+@implementation CustomTransitionAnimator
 
+- (NSTimeInterval)transitionDuration:(id <UIViewControllerContextTransitioning>)transitionContext {
+    return 0.3f;
+}
+
+- (void)animateTransition:(id <UIViewControllerContextTransitioning>)transitionContext {
+    // Grab the from and to view controllers from the context
+    UIViewController *fromViewController = [transitionContext viewControllerForKey:UITransitionContextFromViewControllerKey];
+    UIViewController *toViewController = [transitionContext viewControllerForKey:UITransitionContextToViewControllerKey];
+    
+    // Set our ending frame. We'll modify this later if we have to
+    CGRect endFrame = [[UIScreen mainScreen] bounds];
+    
+    SBSearchHeader *sheader = MSHookIvar<SBSearchHeader *>([%c(SBSearchViewController) sharedInstance], "_searchHeader");
+    UITableView *tableView = MSHookIvar<UITableView *>([%c(SBSearchViewController) sharedInstance], "_tableView");
+    SBSearchResultsBackdropView *backDrop = MSHookIvar<SBSearchResultsBackdropView *>([%c(SBSearchViewController) sharedInstance], "_tableBackdrop");
+
+
+    if (self.presenting) {
+        fromViewController.view.userInteractionEnabled = NO;
+        
+        [transitionContext.containerView addSubview:fromViewController.view];
+        [transitionContext.containerView addSubview:toViewController.view];
+        
+        CGRect startFrame = endFrame;
+        startFrame.origin.y -= 64;
+        
+        toViewController.view.frame = startFrame;
+        sheader.alpha = 1.0;
+        tableView.alpha = 0.3;
+        backDrop.alpha = 0.3;
+
+        [UIView animateWithDuration:0.1f animations:^{
+            fromViewController.view.tintAdjustmentMode = UIViewTintAdjustmentModeAutomatic;
+            toViewController.view.frame = endFrame;
+            tableView.alpha = 0.6;
+        	backDrop.alpha = 0.6;
+        } completion:^(BOOL finished) {
+        	[UIView animateWithDuration:[self transitionDuration:transitionContext]-0.1f animations:^{
+	        	tableView.alpha = 1.0;
+        		backDrop.alpha = 1.0;
+	        } completion:^(BOOL finished) {
+	            [transitionContext completeTransition:YES];
+	        }];
+        }];
+        
+    }
+    else {
+        toViewController.view.userInteractionEnabled = YES;
+        
+        [transitionContext.containerView addSubview:toViewController.view];
+        [transitionContext.containerView addSubview:fromViewController.view];
+        
+        endFrame.origin.y -= 64;
+        
+        [UIView animateWithDuration:[self transitionDuration:transitionContext] animations:^{
+            toViewController.view.tintAdjustmentMode = UIViewTintAdjustmentModeAutomatic;
+            fromViewController.view.frame = endFrame;
+            sheader.alpha = 1.0;
+       	 	tableView.alpha = 0.0;
+        	backDrop.alpha = 0.0;
+        } completion:^(BOOL finished) {
+            [transitionContext completeTransition:YES];
+        }];
+    }
+}
+
+@end
 
 %hook SBNotificationCenterViewController
 -(void)presentGrabberView {
@@ -248,13 +316,12 @@ static void savePrefs() {
 -(void)beginPresentationWithTouchLocation:(CGPoint)arg1 {
 	%log;
 	if(!replace_nc) { %orig; } else {
-		[[%c(SBSearchViewController) sharedInstance] createToShow];
-		[[%c(SBSearchGesture) sharedInstance] revealAnimated:YES];
+		[[%c(SBSearchViewController) sharedInstance] show];
 	}
 }
 
 -(void)updateTransitionWithTouchLocation:(CGPoint)arg1 velocity:(CGPoint)arg2 {
-	%log;
+	//%log;
 	if(!replace_nc) { %orig; } else {
 		// double screenHeight = CGRectGetHeight([UIScreen mainScreen].bounds);
 		// //double screenHeight = [UIScreen mainScreen].bounds.size.height;
@@ -266,7 +333,6 @@ static void savePrefs() {
 		// [[%c(SBSearchViewController) sharedInstance] searchGesture:[%c(SBSearchGesture) sharedInstance] changedPercentComplete:ans];
 	}
 }
-
 %end
 
 
@@ -277,66 +343,6 @@ static void savePrefs() {
 	%orig;
 	[[%c(SBBacklightController) sharedInstance] resetLockScreenIdleTimer];
 }
-
--(void)_keyboardWillChangeFrame:(id)arg1 {
-	if(logging) %log;
-	%orig;
-}
-
-
--(void)_updateCellClipping:(id)arg1 {
-	if(logging) %log;
-	%orig;
-}
-
--(void)scrollViewDidScroll:(id)arg1 {
-	if(logging) %log;
-	%orig;
-
-	// if() {
-	// 	[%c(SBBacklightController) sharedInstance]
-	// }
-
-	// [self _updateClipping];
-
-	// SBSearchTableView *table = MSHookIvar<SBSearchTableView *>(self, "_tableView");
-	// for (SBSearchTableViewCell *cell in table.visibleCells) {
-	// 	NSLog(@"clipping container = %@",[[cell clippingContainer] subviews]);
-	// 	[self _updateCellClipping:[%c(NSConcreteNotification) notificationWithName:@"UpdateMyClipping" object:cell]];
-	// 	[cell clipToTopHeaderWithHeight:52.0f inTableView:table];
-	// 	CGFloat hiddenFrameHeight = table.contentOffset.y + self.navigationController.navigationBar.frame.size.height - cell.frame.origin.y;
- //        if (hiddenFrameHeight >= 0 || hiddenFrameHeight <= cell.frame.size.height) {
- //            [self maskCell:cell fromTopWithMargin:hiddenFrameHeight];
- //        }
- //        [cell updateConstraints];
-	// }
-
-	//table.contentInset = 52.0f;
-}
-
-// %new
-// - (void)maskCell:(SBSearchTableViewCell *)cell fromTopWithMargin:(CGFloat)margin
-// {
-//     cell.layer.mask = [self visibilityMaskForCell:cell withLocation:margin/cell.frame.size.height];
-//     cell.layer.masksToBounds = YES;
-// }
-
-// %new
-// - (CAGradientLayer *)visibilityMaskForCell:(UITableViewCell *)cell withLocation:(CGFloat)location {
-// 	CAGradientLayer *mask = [CAGradientLayer layer];
-//     mask.frame = cell.bounds;
-//     mask.colors = [NSArray arrayWithObjects:(id)[[UIColor colorWithWhite:1 alpha:0] CGColor], (id)[[UIColor colorWithWhite:1 alpha:1] CGColor], nil];
-//     mask.locations = [NSArray arrayWithObjects:[NSNumber numberWithFloat:location], [NSNumber numberWithFloat:location], nil];
-//     return mask;
-// }
-
-// -(void)scrollViewWillBeginDragging:(id)arg1 {
-// 	if(logging) %log;
-// 	%orig;
-// 	[self _updateClipping];
-// }
-
-
 
 -(void)viewDidLayoutSubviews {
 	if(logging) %log;
@@ -358,6 +364,21 @@ static void savePrefs() {
 
 -(BOOL)gestureRecognizerShouldBegin:(id)arg1 { %log; return %orig; }
 
+%new
+- (id<UIViewControllerAnimatedTransitioning>)animationControllerForPresentedController:(UIViewController *)presented
+                                                                  presentingController:(UIViewController *)presenting
+                                                                      sourceController:(UIViewController *)source {
+   
+   CustomTransitionAnimator *animator = [CustomTransitionAnimator new];
+   animator.presenting = YES;
+   return animator;
+}
+%new
+- (id<UIViewControllerAnimatedTransitioning>)animationControllerForDismissedController:(UIViewController *)dismissed {
+   CustomTransitionAnimator *animator = [CustomTransitionAnimator new];
+   return animator;
+}
+
 
 %new
 -(void)show {
@@ -376,7 +397,8 @@ static void savePrefs() {
 	UIViewController *vc = MSHookIvar<UIViewController *>(vcont, "_mainViewController");
 	NSLog(@"main View Controller = %@",vc);
 	SBSearchGesture *ges = [%c(SBSearchGesture) sharedInstance];
-	NSLog(@"frontmostapplication = %@",[[%c(SpringBoard) sharedApplication] _accessibilityFrontMostApplication]);
+	id topDisplay = [[%c(SpringBoard) sharedApplication] _accessibilityFrontMostApplication];	
+	NSLog(@"frontmostapplication = %@",topDisplay);
 	NSLog(@"topDisplay = %@",[[%c(SpringBoard) sharedApplication] _accessibilityTopDisplay]);
 	NSLog(@"runningapps = %@",[[%c(SpringBoard) sharedApplication] _accessibilityRunningApplications]);
 
@@ -395,9 +417,20 @@ static void savePrefs() {
 			fvd = [[fv delegate] retain];
 	}
 
+	vcont.modalPresentationStyle = UIModalPresentationCustom;
+	vcont.transitioningDelegate = self;
+
+	// HBPassthroughWindow when on homescreen
+
 	if(![[%c(SBSearchViewController) sharedInstance] isVisible] && fv && fvd && gesTargetview) {
 		if([%c(SpringBoard) sharedApplication].keyWindow) {
-			if(![%c(SpringBoard) sharedApplication].keyWindow.rootViewController) {
+			if(!topDisplay && [NSStringFromClass([[%c(SpringBoard) sharedApplication].keyWindow class]) isEqualToString:@"SBAppWindow"] && 
+					![(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked] && 
+					![[%c(SBUIController) sharedInstance] isAppSwitcherShowing]) {
+				// is on homescreen
+				NSLog(@"Searchlight: on home screen!");
+				[[%c(SpringBoard) sharedApplication] _revealSpotlight];
+			} else if(![%c(SpringBoard) sharedApplication].keyWindow.rootViewController) {
 				NSLog(@"setting rootViewController to Search");
 				NSLog(@"window.level = %f",[%c(SpringBoard) sharedApplication].keyWindow.windowLevel);
 				UIStatusBar *status = [(SpringBoard *)[%c(SpringBoard) sharedApplication] statusBar];
@@ -409,11 +442,30 @@ static void savePrefs() {
 				//[%c(SpringBoard) sharedApplication].keyWindow.rootViewController = vcont;
 				UIViewController *newController = [[UIViewController alloc] init];
 				[%c(SpringBoard) sharedApplication].keyWindow.rootViewController = newController;
-				[newController presentViewController:vcont animated:YES completion:^{}];
+				//UINavigationController *navController = MSHookIvar<UINavigationController *>([%c(SBSearchViewController) sharedInstance], "_navigationController");
+				
+
+				@try {
+					[newController presentViewController:vcont animated:YES completion:^{}];
+				} @catch (NSException * e) {
+					NSLog(@"Searchlight: error! = %@",e);
+				}
+
+				if([UIApplication sharedApplication].statusBarHidden) {
+					statusBarWasHidden = YES;
+					NSLog(@"Searchlight: statusbar is hidden");
+					[[%c(SpringBoard) sharedApplication] setStatusBarHidden:NO withAnimation:UIStatusBarAnimationSlide];
+				}
+				
 				didAddViewController = YES;
 			}
 			else {
-				[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentViewController:vcont animated:YES completion:^{}];
+				@try {
+					[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentViewController:vcont animated:YES completion:^{}];
+				} @catch (NSException * e) {
+					NSLog(@"Searchlight: error! = %@",e);
+				}
+				didNotAddViewController = YES;
 			}
 		}
 	}
@@ -1331,6 +1383,8 @@ static void savePrefs() {
 
 
 
+
+
 @implementation SearchLightActivator
 - (void)activator:(id)activator receiveEvent:(LAEvent *)event {
 	NSLog(@"event = %@",event);
@@ -1420,61 +1474,74 @@ static void savePrefs() {
 		NSLog(@"main Nav Controller = %@",nc);
 		NSLog(@"vcont's window = %@",vcont.window);
 		NSLog(@"main view controller's window = %@",vc.window);
-		NSLog(@"attempting orig");
 	}
-	
 
-	@try {
-		%orig;
-	}
-	@catch (NSException * e) {
-			NSLog(@"error! = %@",e);
-	}
-	
 	// if(oldController) {
 	// 	[[%c(SpringBoard) sharedApplication].keyWindow.rootViewController presentViewController:oldController animated:NO completion:nil];
 	// 	oldController = nil;
 	// }
 
-	if(logging) NSLog(@"orig complete.");
+	//if(logging) NSLog(@"orig complete.");
 
-	[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController dismissViewControllerAnimated:YES completion:^{
-		if(gesTargetview) {
-			if(logging) NSLog(@"has gesTargetView");
-			SBSearchGesture *ges = [%c(SBSearchGesture) sharedInstance];
-   			[ges setTargetView:gesTargetview];
+	if(didAddViewController || didNotAddViewController) {
+		if(logging) NSLog(@"Searchlight: reseting view controller. ");
+		if(statusBarWasHidden){
+			[[%c(SpringBoard) sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationSlide];
+			statusBarWasHidden = NO;
 		}
-		if(fv) {
-			if(logging) NSLog(@"has fv");
+		[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController dismissViewControllerAnimated:YES completion:^{
+			if(gesTargetview) {
+				if(logging) NSLog(@"Searchlight: has gesTargetView");
+				SBSearchGesture *ges = [%c(SBSearchGesture) sharedInstance];
+	   			[ges setTargetView:gesTargetview];
+			}
+			if(fv) {
+				if(logging) NSLog(@"Searchlight: has fv");
 
-			UIView *outview = MSHookIvar<UIView *>(vcont, "_view");
-			[fv addSubview:outview];
-			// for(id view in [outview subviews]) {
-			// 	[fv addSubview:view];
-			// }
-		}
-		if(didAddViewController) {
-			[%c(SpringBoard) sharedApplication].keyWindow.windowLevel = -1;
-			[%c(SpringBoard) sharedApplication].keyWindow.rootViewController = nil;
+				UIView *outview = MSHookIvar<UIView *>(vcont, "_view");
+				[fv addSubview:outview];
+				// for(id view in [outview subviews]) {
+				// 	[fv addSubview:view];
+				// }
+			}
+			if(didAddViewController) {
+				//[%c(SpringBoard) sharedApplication].keyWindow.windowLevel = -1;
+				[%c(SpringBoard) sharedApplication].keyWindow.rootViewController = nil;
+			}
+
+			@try {
+				%orig;
+			}
+			@catch (NSException * e) {
+					NSLog(@"error! = %@",e);
+			}
 			didAddViewController = NO;
+			didNotAddViewController = NO;
+		}];
+	} else { 
+		NSLog(@"Searchlight: just going to do orig;");
+		@try {
+			%orig;
 		}
-	}];
-
+		@catch (NSException * e) {
+				NSLog(@"Searchlight error! = %@",e);
+		}
+	 }
 
 	if(applicationIdentifier) {
 		if(logging) {
-			NSLog(@"about to launch = %@",applicationIdentifier);
+			NSLog(@"Searchlight: about to launch = %@",applicationIdentifier);
 		}
 		@try {
 			[[UIApplication sharedApplication] launchApplicationWithIdentifier:applicationIdentifier suspended:NO];
 		}
 		@catch (NSException * e) {
-			NSLog(@"error! = %@",e);
+			NSLog(@"Searchlight: error! = %@",e);
 		}
 	}
 	applicationIdentifier = nil;
 
-	if(logging) NSLog(@"done with resetAnimatd");
+	if(logging) NSLog(@"Searchlight: done with resetAnimated");
 
 	
 }

@@ -518,7 +518,7 @@ static void savePrefs() {
 						NSLog(@"Searchlight:window.level = %f",[%c(SpringBoard) sharedApplication].keyWindow.windowLevel);
 						UIStatusBar *status = [(SpringBoard *)[%c(SpringBoard) sharedApplication] statusBar];
 						NSLog(@"statusbar = %f",((UIWindow *)[status statusBarWindow]).windowLevel);
-
+						beforeWindowLevel = [%c(SpringBoard) sharedApplication].keyWindow.windowLevel;
 						NSLog(@"Searchlight: statusbar.windowLevel %f",UIWindowLevelStatusBar);
 						// window.windowLevel = UIWindowLevelStatusBar - 5; //one less than the statusbar
 						[%c(SpringBoard) sharedApplication].keyWindow.windowLevel = ((UIWindow *)[status statusBarWindow]).windowLevel - 1;

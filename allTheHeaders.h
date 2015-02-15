@@ -14,7 +14,7 @@
 @property (getter=_window,nonatomic,readonly) UIWindow * window;
 @property(nonatomic, assign) id< UIViewControllerTransitioningDelegate > transitioningDelegate;
 -(id)viewControllerForRotation;
--(unsigned)supportedInterfaceOrientations;
+-(NSUInteger)supportedInterfaceOrientations;
 -(id)_embeddedDelegate;
 -(id)transitioningDelegate;
 -(void)setInterfaceOrientation:(int)arg1 ;
@@ -45,6 +45,7 @@
 -(void)_resetViewController;
 -(id)_window;
 -(void)_fadeForLaunchWithDuration:(double)arg1 completion:(/*^block*/ id)arg2 ;
+-(void)_fadeOutAndHideKeyboardAnimated:(BOOL)arg1 completionBlock:(/*^block*/id)arg2 ;
 -(void)window:(id)arg1 willAnimateRotationToInterfaceOrientation:(int)arg2 duration:(double)arg3 ;
 -(void)window:(id)arg1 setupWithInterfaceOrientation:(int)arg2 ;
 -(BOOL)_forwardRotationMethods;
@@ -69,6 +70,9 @@
 - (CAGradientLayer *)visibilityMaskForCell:(UITableViewCell *)cell withLocation:(CGFloat)location;
 -(void)dismissAnimated:(BOOL)arg1 completionBlock:(/*^block*/id)arg2 ;
 
+@end
+
+@interface SearchlightViewController : UIViewController
 @end
 
 @interface NSConcreteNotification
@@ -144,12 +148,17 @@
 -(id)_viewDelegate;
 @end
 
+@interface SBSearchScrollView
+@end
+
 @interface SBSearchGesture
 +(id)sharedInstance;
 -(void)revealAnimated:(BOOL)arg1 ;
 -(void)resetAnimated:(BOOL)arg1;
 -(void)updateForRotation;
 -(void)setTargetView:(id)arg1 ;
+-(void)setEnabled:(BOOL)arg1 ;
+-(void)_updateScrollingEnabled;
 @end
 
 @interface SBSearchGestureObserver

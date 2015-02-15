@@ -30,6 +30,10 @@ static SBRootFolderView *fv = nil;
 static SBRootFolderController *fvd = nil;
 static UIView *gesTargetview = nil;
 
+static int beforeWindowLevel = -1;
+
+static SearchlightViewController *cusViewController = nil;
+
 static bool didAddViewController, didNotAddViewController, statusBarWasHidden = NO;
 
 
@@ -239,7 +243,7 @@ static void savePrefs() {
 
 
     if (self.presenting) {
-        fromViewController.view.userInteractionEnabled = NO;
+        //fromViewController.view.userInteractionEnabled = NO;
         
         [transitionContext.containerView addSubview:fromViewController.view];
         [transitionContext.containerView addSubview:toViewController.view];
@@ -268,7 +272,7 @@ static void savePrefs() {
         
     }
     else {
-        toViewController.view.userInteractionEnabled = YES;
+        //toViewController.view.userInteractionEnabled = YES;
         
         [transitionContext.containerView addSubview:toViewController.view];
         [transitionContext.containerView addSubview:fromViewController.view];
@@ -282,11 +286,32 @@ static void savePrefs() {
        	 	tableView.alpha = 0.0;
         	backDrop.alpha = 0.0;
         } completion:^(BOOL finished) {
+        	if([[%c(SpringBoard) sharedApplication].keyWindow.rootViewController isEqual:cusViewController]) {
+        		[%c(SpringBoard) sharedApplication].keyWindow.rootViewController = nil;
+        	} 
+        	if(statusBarWasHidden) {
+        		[[%c(SpringBoard) sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationSlide];
+        		statusBarWasHidden = NO;
+        	}
             [transitionContext completeTransition:YES];
         }];
     }
 }
 
+@end
+
+@implementation SearchlightViewController
+-(BOOL)shouldAutorotate {
+    return YES;
+}
+
+- (NSUInteger)supportedInterfaceOrientations {
+    return (NSUInteger)UIInterfaceOrientationMaskAll;
+}
+
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
+    return UIInterfaceOrientationIsPortrait(interfaceOrientation);
+}
 @end
 
 %hook SBNotificationCenterViewController
@@ -358,6 +383,9 @@ static void savePrefs() {
 	table.sectionIndexTrackingBackgroundColor = [UIColor clearColor]; //bg touched
 	table.sectionIndexBackgroundColor = [UIColor clearColor]; //bg touched
 	[table reloadData];
+
+	vcont.modalPresentationStyle = UIModalPresentationCustom;
+	vcont.transitioningDelegate = self;
 	//SBSearchTableHeaderView *header = [[%c(SBSearchTableHeaderView) alloc] initWithReuseIdentifier:@"SBSearchTableViewHeaderFooterView"];
 	//[table setTableHeaderView:header];
 }
@@ -382,152 +410,144 @@ static void savePrefs() {
 
 %new
 -(void)show {
-	[self createToShow];
-	[[%c(SBSearchGesture) sharedInstance] revealAnimated:YES];
-}
-
-
-%new
--(void)createToShow {
 	vcont = [%c(SBSearchViewController) sharedInstance];
-
 	UIView *view = MSHookIvar<UIView *>(vcont, "_view");
 	originalWindow = MSHookIvar<UIWindow *>(vcont, "_presentingWindow");
-	NSLog(@"presenting Window = %@", originalWindow);
-	UIViewController *vc = MSHookIvar<UIViewController *>(vcont, "_mainViewController");
-	NSLog(@"main View Controller = %@",vc);
+	UIViewController *vc = MSHookIvar<UIViewController *>(vcont, "_mainViewController");	
 	SBSearchGesture *ges = [%c(SBSearchGesture) sharedInstance];
-	id topDisplay = [[%c(SpringBoard) sharedApplication] _accessibilityFrontMostApplication];	
-	NSLog(@"frontmostapplication = %@",topDisplay);
-	NSLog(@"topDisplay = %@",[[%c(SpringBoard) sharedApplication] _accessibilityTopDisplay]);
-	NSLog(@"runningapps = %@",[[%c(SpringBoard) sharedApplication] _accessibilityRunningApplications]);
-
+	id topDisplay = [[%c(SpringBoard) sharedApplication] _accessibilityFrontMostApplication];
 	if(!gesTargetview)	gesTargetview = [MSHookIvar<SBIconScrollView *>(ges, "_targetView") retain];
-
-	NSLog(@"Searchlight: sharedApplication = %@",[%c(SpringBoard) sharedApplication]);
-	NSLog(@"Searchlight: keyWindow = %@",[%c(SpringBoard) sharedApplication].keyWindow);
-	NSLog(@"Searchlight: keyWindow root view Controller = %@",[UIApplication sharedApplication].keyWindow.rootViewController);
-	NSLog(@"Searchlight: keyWindow root view Controller = %@",[%c(SpringBoard) sharedApplication].keyWindow.rootViewController);
-	NSLog(@"Searchlight: keyWindow delegate = %@",[[[UIApplication sharedApplication] keyWindow] delegate]);
-	NSLog(@"Searchlight: keyWindow delegate = %@",[[[%c(SpringBoard) sharedApplication] keyWindow] delegate]);
-
+	
 	if ([[view superview] isKindOfClass:[%c(SBRootFolderView) class]]) {
 		fv = [(SBRootFolderView *)[view superview] retain];
 		if([[fv delegate] isKindOfClass:[%c(SBRootFolderController) class]]) 
 			fvd = [[fv delegate] retain];
 	}
 
-	vcont.modalPresentationStyle = UIModalPresentationCustom;
-	vcont.transitioningDelegate = self;
+	if(logging) {
+		NSLog(@"Searchlight: presenting Window = %@", originalWindow);	
+		NSLog(@"Searchlight: main View Controller = %@",vc);
+		NSLog(@"Searchlight: frontmostapplication = %@",topDisplay);
+		NSLog(@"Searchlight: topDisplay = %@",[[%c(SpringBoard) sharedApplication] _accessibilityTopDisplay]);
+		NSLog(@"Searchlight: runningapps = %@",[[%c(SpringBoard) sharedApplication] _accessibilityRunningApplications]);
+		NSLog(@"Searchlight: sharedApplication = %@",[%c(SpringBoard) sharedApplication]);
+		NSLog(@"Searchlight: keyWindow = %@",[%c(SpringBoard) sharedApplication].keyWindow);
+		NSLog(@"Searchlight: keyWindow root view Controller = %@",[UIApplication sharedApplication].keyWindow.rootViewController);
+		NSLog(@"Searchlight: keyWindow root view Controller = %@",[%c(SpringBoard) sharedApplication].keyWindow.rootViewController);
+		NSLog(@"Searchlight: keyWindow delegate = %@",[[[UIApplication sharedApplication] keyWindow] delegate]);
+		NSLog(@"Searchlight: keyWindow delegate = %@",[[[%c(SpringBoard) sharedApplication] keyWindow] delegate]);
+		NSLog(@"Searchlght: SBSearchGesture's observers = %@",MSHookIvar<NSHashTable *>(ges, "_observers"));
+		NSLog(@"Searchlght: SBSearchGesture's scrollview = %@",MSHookIvar<SBSearchScrollView *>(ges, "_scrollView"));
+		NSLog(@"Searchlght: SBSearchGesture's _panGestureRecognizer = %@",MSHookIvar<UIPanGestureRecognizer *>(ges, "_panGestureRecognizer"));
+
+
+	}
 
 	// HBPassthroughWindow when on homescreen
 
 	if(![[%c(SBSearchViewController) sharedInstance] isVisible] && fv && fvd && gesTargetview) {
 		if([%c(SpringBoard) sharedApplication].keyWindow) {
-			if(!topDisplay && [NSStringFromClass([[%c(SpringBoard) sharedApplication].keyWindow class]) isEqualToString:@"SBAppWindow"] && 
+			if(!topDisplay && [[%c(SpringBoard) sharedApplication].keyWindow isKindOfClass:%c(SBAppWindow)] && 
 					![(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked] && 
 					![[%c(SBUIController) sharedInstance] isAppSwitcherShowing]) {
+
 				// is on homescreen
 				NSLog(@"Searchlight: on home screen!");
 				[[%c(SpringBoard) sharedApplication] _revealSpotlight];
+
 			} else if(![%c(SpringBoard) sharedApplication].keyWindow.rootViewController) {
-				NSLog(@"setting rootViewController to Search");
-				NSLog(@"window.level = %f",[%c(SpringBoard) sharedApplication].keyWindow.windowLevel);
+
+				NSLog(@"Searchlight: setting rootViewController to Search");
+				NSLog(@"Searchlight:window.level = %f",[%c(SpringBoard) sharedApplication].keyWindow.windowLevel);
 				UIStatusBar *status = [(SpringBoard *)[%c(SpringBoard) sharedApplication] statusBar];
 				NSLog(@"statusbar = %f",((UIWindow *)[status statusBarWindow]).windowLevel);
-				NSLog(@"statusbar.windowLevel %f",UIWindowLevelStatusBar);
-				// window.windowLevel = UIWindowLevelStatusBar - 5; //one less than the statusbar
+
+				NSLog(@"Searchlight: statusbar.windowLevel %f",UIWindowLevelStatusBar);
+				beforeWindowLevel = [%c(SpringBoard) sharedApplication].keyWindow.windowLevel;
 				[%c(SpringBoard) sharedApplication].keyWindow.windowLevel = ((UIWindow *)[status statusBarWindow]).windowLevel - 1;
-				//[%c(SpringBoard) sharedApplication].keyWindow.rootViewController = vcont;
-				//[%c(SpringBoard) sharedApplication].keyWindow.rootViewController = vcont;
-				UIViewController *newController = [[UIViewController alloc] init];
-				[%c(SpringBoard) sharedApplication].keyWindow.rootViewController = newController;
+				if(!cusViewController)
+					cusViewController = [[SearchlightViewController alloc] init];
+				if(logging) NSLog(@"Searchlight: about to set root controller");
+				NSLog(@"cusViewControllerWindow = %@",cusViewController.window);
+				NSLog(@"cusViewControllerWindowLevel = %f",cusViewController.window.windowLevel);
+				
 				//UINavigationController *navController = MSHookIvar<UINavigationController *>([%c(SBSearchViewController) sharedInstance], "_navigationController");
 				
-
 				@try {
-					[newController presentViewController:vcont animated:YES completion:^{}];
+					//[ges setTargetView:[%c(SpringBoard) sharedApplication].keyWindow];
+
+					[%c(SpringBoard) sharedApplication].keyWindow.rootViewController = cusViewController;
+					[ges revealAnimated:YES];
+
+					if([UIApplication sharedApplication].statusBarHidden) {
+						statusBarWasHidden = YES;
+						NSLog(@"Searchlight: statusbar is hidden");
+						[[%c(SpringBoard) sharedApplication] setStatusBarHidden:NO withAnimation:UIStatusBarAnimationFade];
+					}
+
+					[cusViewController presentViewController:self animated:YES completion:^{
+						if([UIApplication sharedApplication].statusBarHidden) {
+							statusBarWasHidden = YES;
+							NSLog(@"Searchlight: statusbar is hidden - trying again");
+							[[%c(SpringBoard) sharedApplication] setStatusBarHidden:NO withAnimation:UIStatusBarAnimationSlide];
+						}
+					}];
+
+					 // this is needed for it to actually show
+
+					[ges revealAnimated:YES];
+					didAddViewController = YES;
 				} @catch (NSException * e) {
 					NSLog(@"Searchlight: error! = %@",e);
+					if(statusBarWasHidden) {
+						statusBarWasHidden = NO;
+						[[%c(SpringBoard) sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationNone];
+					}
+					[[%c(SBSearchGesture) sharedInstance] resetAnimated:YES];
+					[[%c(SBSearchViewController) sharedInstance] _fadeOutAndHideKeyboardAnimated:YES completionBlock:^{}];
 				}
 
-				if([UIApplication sharedApplication].statusBarHidden) {
-					statusBarWasHidden = YES;
-					NSLog(@"Searchlight: statusbar is hidden");
-					[[%c(SpringBoard) sharedApplication] setStatusBarHidden:NO withAnimation:UIStatusBarAnimationSlide];
-				}
 				
-				didAddViewController = YES;
 			}
 			else {
 				@try {
-					[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentViewController:vcont animated:YES completion:^{}];
+					//[ges setTargetView:[%c(SpringBoard) sharedApplication].keyWindow];
+
+					if([UIApplication sharedApplication].statusBarHidden) {
+						NSLog(@"Searchlight: setting rootViewController to Search");
+						NSLog(@"Searchlight:window.level = %f",[%c(SpringBoard) sharedApplication].keyWindow.windowLevel);
+						UIStatusBar *status = [(SpringBoard *)[%c(SpringBoard) sharedApplication] statusBar];
+						NSLog(@"statusbar = %f",((UIWindow *)[status statusBarWindow]).windowLevel);
+
+						NSLog(@"Searchlight: statusbar.windowLevel %f",UIWindowLevelStatusBar);
+						// window.windowLevel = UIWindowLevelStatusBar - 5; //one less than the statusbar
+						[%c(SpringBoard) sharedApplication].keyWindow.windowLevel = ((UIWindow *)[status statusBarWindow]).windowLevel - 1;
+						statusBarWasHidden = YES;
+						NSLog(@"Searchlight: statusbar is hidden");
+						[[%c(SpringBoard) sharedApplication] setStatusBarHidden:NO withAnimation:UIStatusBarAnimationFade];
+					}
+
+					if(logging) NSLog(@"Searchlight: Attempting to present view controller");
+					[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentViewController:vcont animated:YES completion:^{
+					}];
+
+					[ges revealAnimated:YES];
+
+					didNotAddViewController = YES;
+
 				} @catch (NSException * e) {
 					NSLog(@"Searchlight: error! = %@",e);
+					if(statusBarWasHidden) {
+						statusBarWasHidden = NO;
+						[[%c(SpringBoard) sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationNone];
+					}
+					[[%c(SBSearchGesture) sharedInstance] resetAnimated:YES];
+					[[%c(SBSearchViewController) sharedInstance] _fadeOutAndHideKeyboardAnimated:YES completionBlock:^{}];
 				}
-				didNotAddViewController = YES;
+				
 			}
 		}
 	}
-		//vcont.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
-
-		// if(vc) {
-		// 	NSLog(@"has vc!");
-		// 	@try {
-		// 		[vc presentViewController:vcont animated:YES completion:^{}];
-		// 	}
-		// 	@catch (NSException * e) {
-		// 		NSLog(@"error! = %@",e);
-		// 	}
-		// }
-		// if ([(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked] && ls_enabled) {
-		// 	if(logging) NSLog(@"on lockscreen");
-		// 	@try {
-		// 		[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentViewController:vcont animated:YES completion:^{}];
-		// 	}
-		// 	@catch (NSException * e) {
-		// 		NSLog(@"error! = %@",e);
-		// 	}
-		// } else if([[%c(SBUIController) sharedInstance] isAppSwitcherShowing]) {
-		// 	if(logging) NSLog(@"switcher is showing");
-		// 	@try {
-		// 		[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentViewController:vcont animated:YES completion:^{}];
-		// 	}
-		// 	@catch (NSException * e) {
-		// 		NSLog(@"error! = %@",e);
-		// 	}	
-		// } else {
-		// 	//[[%c(SBSearchViewController) sharedInstance] forceRotation];
-		// 	NSLog(@"doing the last thing");
-			
-
-
-
-
-			// if(NO) {
-			// 	window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-
-
-			// 	UIStatusBar *status = [(SpringBoard *)[%c(SpringBoard) sharedApplication] statusBar];
-			// 	NSLog(@"statusbar = %f",((UIWindow *)[status statusBarWindow]).windowLevel);
-			// 	NSLog(@"statusbar.windowLevel %f",UIWindowLevelStatusBar);
-			// 	window.windowLevel = UIWindowLevelStatusBar - 5; //one less than the statusbar
-
-
-			// 	 window.rootViewController = vcont;
-
-		 //        [window setRootViewController:vcont];
-					
-			// 	[window setDelegate:vcont];
-			// 	[window setContentView:view];
-			// 	[window makeKeyAndVisible];
-			// 	[window becomeFirstResponder];
-			// 	//[window makeKeyAndOrderFront:nil];
-			// 	[ges setTargetView:window];
-			// 	// [ges updateForRotation];
-			// 	//[[%c(SBSearchViewController) sharedInstance] forceRotation];
-			// }
-	
 }
 
 
@@ -1485,15 +1505,20 @@ static void savePrefs() {
 
 	if(didAddViewController || didNotAddViewController) {
 		if(logging) NSLog(@"Searchlight: reseting view controller. ");
+
 		if(statusBarWasHidden){
 			[[%c(SpringBoard) sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationSlide];
 			statusBarWasHidden = NO;
+			//[%c(SpringBoard) sharedApplication].keyWindow.windowLevel = beforeWindowLevel;
+
 		}
 		[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController dismissViewControllerAnimated:YES completion:^{
 			if(gesTargetview) {
 				if(logging) NSLog(@"Searchlight: has gesTargetView");
 				SBSearchGesture *ges = [%c(SBSearchGesture) sharedInstance];
 	   			[ges setTargetView:gesTargetview];
+	   			[ges setEnabled:YES];
+	   			[ges _updateScrollingEnabled];
 			}
 			if(fv) {
 				if(logging) NSLog(@"Searchlight: has fv");
@@ -1504,10 +1529,13 @@ static void savePrefs() {
 				// 	[fv addSubview:view];
 				// }
 			}
-			if(didAddViewController) {
-				//[%c(SpringBoard) sharedApplication].keyWindow.windowLevel = -1;
-				[%c(SpringBoard) sharedApplication].keyWindow.rootViewController = nil;
-			}
+			// if(didAddViewController || statusBarWasHidden) {
+			// 	[%c(SpringBoard) sharedApplication].keyWindow.windowLevel = beforeWindowLevel;
+			// 	statusBarWasHidden = NO;
+			// }
+			// if([[%c(SpringBoard) sharedApplication].keyWindow.rootViewController isEqual:cusViewController]) {
+			// 	[%c(SpringBoard) sharedApplication].keyWindow.rootViewController = nil;
+			// }
 
 			@try {
 				%orig;

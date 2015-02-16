@@ -288,6 +288,7 @@ static void savePrefs() {
         } completion:^(BOOL finished) {
         	if([[%c(SpringBoard) sharedApplication].keyWindow.rootViewController isEqual:cusViewController]) {
         		[%c(SpringBoard) sharedApplication].keyWindow.rootViewController = nil;
+        		[%c(SpringBoard) sharedApplication].keyWindow.windowLevel = beforeWindowLevel;
         	} 
         	if(statusBarWasHidden) {
         		[[%c(SpringBoard) sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationSlide];
@@ -297,7 +298,6 @@ static void savePrefs() {
         }];
     }
 }
-
 @end
 
 @implementation SearchlightViewController
@@ -504,7 +504,7 @@ static void savePrefs() {
 						[[%c(SpringBoard) sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationNone];
 					}
 					[[%c(SBSearchGesture) sharedInstance] resetAnimated:YES];
-					[[%c(SBSearchViewController) sharedInstance] _fadeOutAndHideKeyboardAnimated:YES completionBlock:^{}];
+					[[%c(SBSearchViewController) sharedInstance] _fadeOutAndHideKeyboardAnimated:YES completionBlock:nil];
 				}
 
 				
@@ -542,7 +542,7 @@ static void savePrefs() {
 						[[%c(SpringBoard) sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationNone];
 					}
 					[[%c(SBSearchGesture) sharedInstance] resetAnimated:YES];
-					[[%c(SBSearchViewController) sharedInstance] _fadeOutAndHideKeyboardAnimated:YES completionBlock:^{}];
+					[[%c(SBSearchViewController) sharedInstance] _fadeOutAndHideKeyboardAnimated:YES completionBlock:nil];
 				}
 				
 			}
@@ -1027,7 +1027,7 @@ static void savePrefs() {
 	if(logging) %log;
 
     if ([self shouldDisplayListLauncher]) {
-    	[self dismissAnimated:YES completionBlock:^{}];
+    	[self dismissAnimated:YES completionBlock:nil];
 
     	NSString *identifier = @"";
 

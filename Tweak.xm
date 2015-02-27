@@ -286,7 +286,14 @@ static void savePrefs() {
        	 	tableView.alpha = 0.0;
         	backDrop.alpha = 0.0;
         } completion:^(BOOL finished) {
-        	if([[%c(SpringBoard) sharedApplication].keyWindow.rootViewController isEqual:cusViewController]) {
+        	if([[%c(SpringBoard) sharedApplication].keyWindow.rootViewController isEqual:cusViewController] || cusViewController) {
+        		dispatch_async(dispatch_get_main_queue(), ^{
+        			//[cusViewController dismissViewControllerAnimated:NO  completion:nil];
+					[cusViewController.view removeFromSuperview];
+					NSLog(@"this was called");
+				});
+        		// [cusViewController release];
+        		// cusViewController = nil;
         		[%c(SpringBoard) sharedApplication].keyWindow.rootViewController = nil;
         		[%c(SpringBoard) sharedApplication].keyWindow.windowLevel = beforeWindowLevel;
         	} 
@@ -1571,7 +1578,27 @@ static void savePrefs() {
 
 	if(logging) NSLog(@"Searchlight: done with resetAnimated");
 
-	
+	if(cusViewController) {
+		dispatch_async(dispatch_get_main_queue(), ^{
+			//[cusViewController dismissViewControllerAnimated:NO  completion:nil];
+			[cusViewController.view removeFromSuperview];
+			NSLog(@"this was called");
+		});
+	}
+		
+}
+%end
+
+%hook SBApplication
+-(void)_didSuspend {
+	if(logging) %log;
+	%orig;
+	if(cusViewController) {
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[cusViewController dismissViewControllerAnimated:NO  completion:nil];
+			[cusViewController.view removeFromSuperview];
+		});
+	}
 }
 %end
 

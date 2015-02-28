@@ -10,8 +10,23 @@
 			<string>PSGroupCell</string>
 			<key>label</key>
 			<string>Header View</string>
+			<key>footerText</key>
+			<string>If disabled, the header will not have a dynamically changing backround blur and will be the color of your wallpaper.</string>
 		</dict>
-		
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true />
+			<key>defaults</key>
+			<string>org.thebigboss.searchlight</string>
+			<key>key</key>
+			<string>changeHeader</string>
+			<key>label</key>
+			<string>Enabled</string>
+			<key>PostNotification</key>
+			<string>org.thebigboss.searchlight/settingschanged</string>
+		</dict>
 		<dict>
 			<key>cell</key>
 			<string>PSLinkListCell</string>
@@ -56,32 +71,9 @@
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
-			<string>Resize Header</string>
-			<key>footerText</key>
-			<string>Experimental. Adds room for the statusbar when launched in an application.</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<false/>
-			<key>defaults</key>
-			<string>org.thebigboss.searchlight</string>
-			<key>key</key>
-			<string>resize_header_enabled</string>
-			<key>label</key>
-			<string>Enabled</string>
-			<key>PostNotification</key>
-			<string>org.thebigboss.searchlight/settingschanged</string>
-		</dict>
-
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>label</key>
 			<string>Blur Section Header</string>
 			<key>footerText</key>
-			<string>Should be unnecessary. Blurs slow down system though.</string>
+			<string>Should be unnecessary after one search with content. Blurs slow down system if enabled.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -120,31 +112,6 @@
 			<key>PostNotification</key>
 			<string>org.thebigboss.searchlight/settingschanged</string>
 		</dict>
-
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>label</key>
-			<string>Change header</string>
-			<key>footerText</key>
-			<string>Experimental. Keeps the blurred wallpaper background.</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<true />
-			<key>defaults</key>
-			<string>org.thebigboss.searchlight</string>
-			<key>key</key>
-			<string>changeHeader</string>
-			<key>label</key>
-			<string>Enabled</string>
-			<key>PostNotification</key>
-			<string>org.thebigboss.searchlight/settingschanged</string>
-		</dict>
-
-
 	</array>
 	<key>title</key>
 	<string>Appearance</string>

@@ -19,7 +19,9 @@
 -(id)transitioningDelegate;
 -(void)setInterfaceOrientation:(int)arg1 ;
 -(id)_window; 
+-(void)attemptRotationToDeviceOrientation;
 -(BOOL)window:(id)arg1 shouldAutorotateToInterfaceOrientation:(long long)arg2 ;
+-(void)window:(id)arg1 willRotateToInterfaceOrientation:(long long)arg2 duration:(double)arg3 ;
 @end
 
 @interface SBSearchTableView : UITableView
@@ -60,7 +62,7 @@
 -(void)activeInterfaceOrientationWillChangeToOrientation:(int)activeInterfaceOrientation;
 -(void)repositionCells;
 -(void)forceRotation;
--(void)setHeaderbyChangingFrame:(bool)changeFrame withPushDown:(int)pushDown;
+-(void)setHeaderBackground;
 -(void)show;
 -(void)createToShow;
 -(void)_searchFieldEditingChanged;
@@ -143,9 +145,10 @@
 @end
 
 @interface SBRootFolderView : UIView
--(void)setOrientation:(int)arg1 ;
+//-(void)setOrientation:(int)arg1 ;
 -(id)delegate;
 -(id)_viewDelegate;
+@property (assign,nonatomic) long long orientation; 
 @end
 
 @interface SBSearchScrollView

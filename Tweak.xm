@@ -14,7 +14,7 @@ static NSString *lockscreenIdentifier = nil;
 static NSString *applicationIdentifier = nil;
 static _UIBackdropView *background = nil;
 static int headerStyle = 2060;
-static bool logging, hideKeyboard, selectall, resize_header, replace_nc, show_badges, clearResults, changeHeader = false;
+static bool logging, hideKeyboard, selectall, replace_nc, show_badges, clearResults, changeHeader = false;
 static bool force_rotation, ls_enabled, blur_section_header_enabled = true;
 static NSCache *nameCache = [NSCache new];
 static NSCache *iconCache = [NSCache new];
@@ -24,8 +24,6 @@ static NSMutableArray *indexPositions = nil;
 
 static UIWindow *window = nil;
 static UIWindow *originalWindow = nil;
-//static UIViewController *oldController = nil;
-static SBSearchViewController *vcont = nil;
 static SBRootFolderView *fv = nil; 
 static SBRootFolderController *fvd = nil;
 static UIView *gesTargetview = nil;
@@ -151,8 +149,6 @@ static void loadPrefs() {
 	headerStyle = [settings objectForKey:@"header_style"] ? [[settings objectForKey:@"header_style"] integerValue] : 2060;
 	
 	force_rotation = [settings objectForKey:@"rotation_enabled"] ? [[settings objectForKey:@"rotation_enabled"] boolValue] : YES;
-
-	resize_header = [settings objectForKey:@"resize_header_enabled"] ? [[settings objectForKey:@"resize_header_enabled"] boolValue] : NO;
 	
 	replace_nc = [settings objectForKey:@"nc_replace_enabled"] ? [[settings objectForKey:@"nc_replace_enabled"] boolValue] : NO;
 	show_badges = [settings objectForKey:@"show_badges"] ? [[settings objectForKey:@"show_badges"] boolValue] : NO;
@@ -317,7 +313,7 @@ static void savePrefs() {
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
-    return UIInterfaceOrientationIsPortrait(interfaceOrientation);
+    return YES;
 }
 @end
 
@@ -391,8 +387,8 @@ static void savePrefs() {
 	table.sectionIndexBackgroundColor = [UIColor clearColor]; //bg touched
 	[table reloadData];
 
-	vcont.modalPresentationStyle = UIModalPresentationCustom;
-	vcont.transitioningDelegate = self;
+	self.modalPresentationStyle = UIModalPresentationCustom;
+	self.transitioningDelegate = self;
 	//SBSearchTableHeaderView *header = [[%c(SBSearchTableHeaderView) alloc] initWithReuseIdentifier:@"SBSearchTableViewHeaderFooterView"];
 	//[table setTableHeaderView:header];
 }
@@ -417,10 +413,9 @@ static void savePrefs() {
 
 %new
 -(void)show {
-	vcont = [%c(SBSearchViewController) sharedInstance];
-	UIView *view = MSHookIvar<UIView *>(vcont, "_view");
-	originalWindow = MSHookIvar<UIWindow *>(vcont, "_presentingWindow");
-	UIViewController *vc = MSHookIvar<UIViewController *>(vcont, "_mainViewController");	
+	UIView *view = MSHookIvar<UIView *>(self, "_view");
+	originalWindow = MSHookIvar<UIWindow *>(self, "_presentingWindow");
+	UIViewController *vc = MSHookIvar<UIViewController *>(self, "_mainViewController");	
 	SBSearchGesture *ges = [%c(SBSearchGesture) sharedInstance];
 	id topDisplay = [[%c(SpringBoard) sharedApplication] _accessibilityFrontMostApplication];
 	if(!gesTargetview)	gesTargetview = [MSHookIvar<SBIconScrollView *>(ges, "_targetView") retain];
@@ -535,7 +530,7 @@ static void savePrefs() {
 					}
 
 					if(logging) NSLog(@"Searchlight: Attempting to present view controller");
-					[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentViewController:vcont animated:YES completion:^{
+					[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentViewController:self animated:YES completion:^{
 					}];
 
 					[ges revealAnimated:YES];
@@ -563,56 +558,55 @@ static void savePrefs() {
 	if(force_rotation) {
 		float orientation = [(SpringBoard *)[%c(SpringBoard) sharedApplication] interfaceOrientationForCurrentDeviceOrientation];
 		NSLog(@"rotatating to %f",orientation);
-
-		[%c(SBSearchViewController) attemptRotationToDeviceOrientation];
-
-		[self setInterfaceOrientation:orientation];
-
-		[self activeInterfaceOrientationWillChangeToOrientation:orientation];
-		[self _rotatePresentingWindowIfNecessaryTo:orientation withDuration:1.0f];
-
-
-		SBSearchGesture *ges = [%c(SBSearchGesture) sharedInstance];
-		 [ges updateForRotation];
-
-		 [self activeInterfaceOrientationWillChangeToOrientation:orientation];
-		 [self activeInterfaceOrientationDidChangeToOrientation:orientation willAnimateWithDuration:0.0 fromOrientation:1];
 		
-		//}
-		// if(window) {
-		// 	[self window:window shouldAutorotateToInterfaceOrientation:orientation];
-		// 	[self window:window shouldAutorotateToInterfaceOrientation:orientation];
-		// 	[window _updateToInterfaceOrientation:orientation duration:0.0f force:YES];
-		// 	[window _setRotatableViewOrientation:orientation duration:0.0f force:YES];
-		// }
+		//is on the home screen so open in the orientation of the icons
+		id topDisplay = [[%c(SpringBoard) sharedApplication] _accessibilityFrontMostApplication];
+		if(fv && !topDisplay && [[%c(SpringBoard) sharedApplication].keyWindow isKindOfClass:%c(SBAppWindow)] && 
+			![(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked] && 
+			![[%c(SBUIController) sharedInstance] isAppSwitcherShowing]) {
+				NSLog(@"fv orientation = %f",(float)fv.orientation);
+				if(fv.orientation >= 0.0) {
+					orientation = fv.orientation;
+				}
+		}
 
-		[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:YES withPushDown:20];
-
-		[[%c(SBSearchViewController) sharedInstance] _updateHeaderHeightIfNeeded];
+	     [UIView animateWithDuration:0.5f animations:^{
+	     	switch((int)orientation) {
+		     	case 1: { // normal
+		     		self.view.transform = CGAffineTransformMakeRotation(0);
+		     		self.view.frame = [UIScreen mainScreen].bounds;
+		     		break;
+		     	}
+		     	case 2: { //upside down = good
+		     		self.view.transform = CGAffineTransformMakeRotation(M_PI);
+		     		self.view.frame = [UIScreen mainScreen].bounds;
+		     		break;
+		     	}
+		     	case 3: { // left = good
+		     		self.view.transform = CGAffineTransformMakeRotation(M_PI_2);
+		     		self.view.frame = [UIScreen mainScreen].bounds;
+		     		break;
+		     	}
+		     	default:  {//4 = right
+		     		self.view.transform = CGAffineTransformMakeRotation(M_PI + M_PI_2);
+		     		self.view.frame = [UIScreen mainScreen].bounds;
+		     		break;
+		     	}
+		     } 
+	     } completion:^(BOOL finished){
+	     	[[%c(SBSearchViewController) sharedInstance] setHeaderBackground];
+	     }];
+	     
 	}
 }
 
 %new
--(void)setHeaderbyChangingFrame:(bool)changeFrame withPushDown:(int)pushDown {
+-(void)setHeaderBackground {
 	UINavigationController *nav = MSHookIvar<UINavigationController *>([%c(SBSearchViewController) sharedInstance], "_navigationController");
 	if(logging) {
 		NSLog(@"before");
 		NSLog(@"navigation controller view = %@",nav.view);
 		NSLog(@"navigation controller bar = %@",nav.navigationBar);
-	}
-
-	if(changeFrame && resize_header) {
-		CGRect navframe = nav.navigationBar.frame;
-		// navframe.size.height = 44; 
-		navframe.origin.y = pushDown;
-		nav.navigationBar.frame = navframe;
-
-		navframe = nav.view.frame;
-		// navframe.size.height = 44; 
-		navframe.origin.y = pushDown;
-		nav.view.frame = navframe;
-
-		[nav _setUseStandardStatusBarHeight:YES];
 	}
 
 	
@@ -728,12 +722,8 @@ static void savePrefs() {
 
 	if(arg2) {
 		[[%c(SBSearchViewController) sharedInstance] forceRotation];
-		UINavigationController *nav = MSHookIvar<UINavigationController *>([%c(SBSearchViewController) sharedInstance], "_navigationController");
-		if(nav.view.frame.origin.y == 10) {
-			[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:YES withPushDown:20];
-		} else {
-			[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:NO withPushDown:20];
-		}
+		//UINavigationController *nav = MSHookIvar<UINavigationController *>([%c(SBSearchViewController) sharedInstance], "_navigationController");
+		[[%c(SBSearchViewController) sharedInstance] setHeaderBackground];
 		if(![[%c(SBSearchViewController) sharedInstance] _showingKeyboard] && !hideKeyboard) {
 			[[%c(SBSearchViewController) sharedInstance] _setShowingKeyboard:YES];	
 			SBSearchHeader *sheader = MSHookIvar<SBSearchHeader *>([%c(SBSearchViewController) sharedInstance], "_searchHeader");
@@ -1479,11 +1469,8 @@ static void savePrefs() {
 		NSLog(@"presenting Window = %@", originalWindow);
 		UINavigationController *nc = MSHookIvar<UINavigationController *>([%c(SBSearchViewController) sharedInstance], "_navigationController");
 		NSLog(@"main Nav Controller = %@",nc);
-	}
-
-
-	//[[%c(SBSearchViewController) sharedInstance] setHeaderbyChangingFrame:YES withPushDown:20];
-	
+	}	
+	[[%c(SBSearchViewController) sharedInstance] forceRotation];
 }
 
 -(void)resetAnimated:(BOOL)arg1 {
@@ -1499,7 +1486,7 @@ static void savePrefs() {
 		NSLog(@"main View Controller = %@",vc);
 		NSLog(@"presenting Window = %@", originalWindow);
 		NSLog(@"main Nav Controller = %@",nc);
-		NSLog(@"vcont's window = %@",vcont.window);
+		//NSLog(@"SBSearchViewController's window = %@",[%c(SBSearchViewController) sharedInstance].window);
 		NSLog(@"main view controller's window = %@",vc.window);
 	}
 
@@ -1530,7 +1517,7 @@ static void savePrefs() {
 			if(fv) {
 				if(logging) NSLog(@"Searchlight: has fv");
 
-				UIView *outview = MSHookIvar<UIView *>(vcont, "_view");
+				UIView *outview = MSHookIvar<UIView *>([%c(SBSearchViewController) sharedInstance], "_view");
 				[fv addSubview:outview];
 				// for(id view in [outview subviews]) {
 				// 	[fv addSubview:view];
@@ -1599,6 +1586,7 @@ static void savePrefs() {
 			[cusViewController.view removeFromSuperview];
 		});
 	}
+	[[%c(SBSearchViewController) sharedInstance] forceRotation];
 }
 %end
 

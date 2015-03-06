@@ -530,8 +530,7 @@ static void savePrefs() {
 					}
 
 					if(logging) NSLog(@"Searchlight: Attempting to present view controller");
-					[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentViewController:self animated:YES completion:^{
-					}];
+					[(UIViewController *)[[UIApplication sharedApplication] keyWindow].rootViewController presentViewController:self animated:YES completion:nil];
 
 					[ges revealAnimated:YES];
 

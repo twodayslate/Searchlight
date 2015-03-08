@@ -720,6 +720,7 @@ static void savePrefs() {
 	%orig;
 
 	if(arg2) {
+		[[UIApplication sharedApplication].windows[2] becomeKeyWindow];
 		[[%c(SBSearchViewController) sharedInstance] forceRotation];
 		//UINavigationController *nav = MSHookIvar<UINavigationController *>([%c(SBSearchViewController) sharedInstance], "_navigationController");
 		[[%c(SBSearchViewController) sharedInstance] setHeaderBackground];

@@ -105,6 +105,7 @@
 -(void)showSpringBoardStatusBar;
 -(id)statusBar;
 -(int)interfaceOrientationForCurrentDeviceOrientation;
+-(long long)activeInterfaceOrientation;
 -(void)noteInterfaceOrientationChanged:(int)arg1 duration:(float)arg2 ;
 -(id)_accessibilityFrontMostApplication;
 -(id)_accessibilityTopDisplay;
@@ -120,6 +121,7 @@
 -(id)_accessibilityRunningApplications;
 -(BOOL)launchApplicationWithIdentifier:(id)arg1 suspended:(BOOL)arg2 ;
 -(void)_revealSpotlight;
+-(long long)activeInterfaceOrientation;
 @end
 
 @interface SBSearchResultsBackdropView : UIView
@@ -138,6 +140,7 @@
 -(id)contentView;
 -(id)delegate;
 -(void)_updateInterfaceOrientationFromDeviceOrientationIfRotationEnabled:(BOOL)arg1 ;
+-(void)_updateStatusBarToInterfaceOrientation:(long long)arg1 duration:(double)arg2 ;
 -(void)_updateToInterfaceOrientation:(int)arg1 animated:(BOOL)arg2 ;
 -(void)_updateToInterfaceOrientation:(int)arg1 duration:(double)arg2 force:(BOOL)arg3 ;
 -(void)makeKeyAndOrderFront:(id)arg1 ;

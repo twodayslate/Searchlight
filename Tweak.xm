@@ -555,19 +555,24 @@ static void savePrefs() {
 %new
 -(void)forceRotation {
 	if(force_rotation) {
-		float orientation = [(SpringBoard *)[%c(SpringBoard) sharedApplication] interfaceOrientationForCurrentDeviceOrientation];
-		NSLog(@"rotatating to %f",orientation);
+		float orientation = [[%c(SpringBoard) sharedApplication] activeInterfaceOrientation];
 		
+		NSLog(@"Searchlight - activeInterfaceOrientation: %f",(float)[[%c(SpringBoard) sharedApplication] activeInterfaceOrientation]);
+		NSLog(@"Searchlight - interfaceOrientationForCurrentDeviceOrientation: %f",(float)[(SpringBoard *)[%c(SpringBoard) sharedApplication] interfaceOrientationForCurrentDeviceOrientation]);
+		NSLog(@"Searchlight - rotatating to %f",orientation);
+
 		//is on the home screen so open in the orientation of the icons
-		id topDisplay = [[%c(SpringBoard) sharedApplication] _accessibilityFrontMostApplication];
-		if(fv && !topDisplay && [[%c(SpringBoard) sharedApplication].keyWindow isKindOfClass:%c(SBAppWindow)] && 
-			![(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked] && 
-			![[%c(SBUIController) sharedInstance] isAppSwitcherShowing]) {
-				NSLog(@"fv orientation = %f",(float)fv.orientation);
-				if(fv.orientation >= 0.0) {
-					orientation = fv.orientation;
-				}
-		}
+		// id topDisplay = [[%c(SpringBoard) sharedApplication] _accessibilityFrontMostApplication];
+		// if(fv && !topDisplay && [[%c(SpringBoard) sharedApplication].keyWindow isKindOfClass:%c(SBAppWindow)] && 
+		// 	![(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked] && 
+		// 	![[%c(SBUIController) sharedInstance] isAppSwitcherShowing]) {
+		// 		NSLog(@"fv orientation = %f",(float)fv.orientation);
+		// 		if(fv.orientation >= 0.0) {
+		// 			orientation = fv.orientation;
+		// 		}
+		// }
+
+		[[%c(SpringBoard) sharedApplication].keyWindow _updateStatusBarToInterfaceOrientation:orientation duration:0.0];
 
 	     [UIView animateWithDuration:0.5f animations:^{
 	     	switch((int)orientation) {
@@ -720,6 +725,15 @@ static void savePrefs() {
 	%orig;
 
 	if(arg2) {
+		if(logging) {
+			NSLog(@"Searchlight - windows = %@",[UIApplication sharedApplication].windows);
+			NSLog(@"Searchlight - keyWindow =%@",[UIApplication sharedApplication].keyWindow);
+		}
+		// for(UIWindow *aWindow in [UIApplication sharedApplication].windows) {
+		// 	if([aWindow isKindOfClass:%c(SBAppWindow)]) {
+		// 		[aWindow becomeKeyWindow];
+		// 	}
+		// }
 		[[%c(SBSearchViewController) sharedInstance] forceRotation];
 		//UINavigationController *nav = MSHookIvar<UINavigationController *>([%c(SBSearchViewController) sharedInstance], "_navigationController");
 		[[%c(SBSearchViewController) sharedInstance] setHeaderBackground];
@@ -1459,6 +1473,9 @@ static void savePrefs() {
 
 -(void)revealAnimated:(BOOL)arg1 {
 	if(logging) %log;
+	
+	[[%c(SBSearchViewController) sharedInstance] forceRotation];
+
 	%orig;
 	applicationIdentifier = nil;
 	if(logging) {
@@ -1568,6 +1585,7 @@ static void savePrefs() {
 		dispatch_async(dispatch_get_main_queue(), ^{
 			//[cusViewController dismissViewControllerAnimated:NO  completion:nil];
 			[cusViewController.view removeFromSuperview];
+			//[cusViewController release];
 			NSLog(@"this was called");
 		});
 	}

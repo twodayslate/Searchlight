@@ -158,7 +158,7 @@ static void loadPrefs() {
 	blur_section_header_enabled = [settings objectForKey:@"blur_section_header_enabled"] ? [[settings objectForKey:@"blur_section_header_enabled"] boolValue] : YES;
 	clearResults = [settings objectForKey:@"clearResults"] ? [[settings objectForKey:@"clearResults"] boolValue] : NO;
 	changeHeader = [settings objectForKey:@"changeHeader"] ? [[settings objectForKey:@"changeHeader"] boolValue] : NO;
-	scrolltop = [settings objectForKey:@"scrolltop"] ? [[settings objectForKey:@"scrolltop"] boolValue] : NO;
+	scrolltop = [settings objectForKey:@"scrollTop"] ? [[settings objectForKey:@"scrollTop"] boolValue] : NO;
 
 
 	enabledSections = [settings objectForKey:@"enabledSections"] ?: @[]; [enabledSections retain];
@@ -722,10 +722,30 @@ static void savePrefs() {
 		[self _searchFieldEditingChanged];
 	}
 
+	if(arg2) {
+		NSLog(@"did competlete %f", (float) scrolltop);
+		if(scrolltop) {
+			UITableView *atable = MSHookIvar<UITableView *>([%c(SBSearchViewController) sharedInstance], "_tableView");
+
+			//NSLog(@"contentOffset before = %f", (float) atable.contentOffset.y);
+			//((SBSearchViewController *)[%c(SBSearchViewController) sharedInstance]).edgesForExtendedLayout = UIRectEdgeNone;
+
+			//[MSHookIvar<UITableView *>([%c(SBSearchViewController) sharedInstance], "_tableView") setContentOffset:CGPointZero animated:YES];
+			//NSIndexPath* top = [NSIndexPath indexPathForRow:NSNotFound inSection:0];
+			//[MSHookIvar<UITableView *>([%c(SBSearchViewController) sharedInstance], "_tableView") scrollToRowAtIndexPath:top atScrollPosition:UITableViewScrollPositionTop animated:NO];
+			//atable.contentOffset = CGPointMake(0, 0 - atable.contentInset.top);
+			//NSLog(@"contentOffset = %f", (float) atable.contentOffset.y);
+			[atable _scrollToTopHidingTableHeader:YES];
+			//atable.edgesForExtendedLayout = UIRectEdgeNone;
+
+		}
+	}
+
 
 	%orig;
 
 	if(arg2) {
+
 		if(logging) {
 			NSLog(@"Searchlight - windows = %@",[UIApplication sharedApplication].windows);
 			NSLog(@"Searchlight - keyWindow =%@",[UIApplication sharedApplication].keyWindow);
@@ -1489,9 +1509,7 @@ static void savePrefs() {
 	}	
 	[[%c(SBSearchViewController) sharedInstance] forceRotation];
 
-	if(scrolltop) {
-		[MSHookIvar<UITableView *>([%c(SBSearchViewController) sharedInstance], "_tableView") setContentOffset:CGPointZero animated:YES];
-	}
+
 
 }
 
@@ -1552,23 +1570,26 @@ static void savePrefs() {
 			// if([[%c(SpringBoard) sharedApplication].keyWindow.rootViewController isEqual:cusViewController]) {
 			// 	[%c(SpringBoard) sharedApplication].keyWindow.rootViewController = nil;
 			// }
-
-			@try {
-				%orig;
+			if([[%c(SBSearchViewController) sharedInstance] isVisible]) {
+				if(logging) NSLog(@"Going to try orig");
+				@try {
+					%orig;
+				}
+				@catch (NSException * e) {
+						NSLog(@"error! = %@",e);
+				}
 			}
-			@catch (NSException * e) {
-					NSLog(@"error! = %@",e);
-			}
+			
 			didAddViewController = NO;
 			didNotAddViewController = NO;
 		}];
 	} else { 
-		NSLog(@"Searchlight: just going to do orig;");
+		if(logging) NSLog(@"Searchlight: just going to do orig;");
 		@try {
 			%orig;
 		}
 		@catch (NSException * e) {
-				NSLog(@"Searchlight error! = %@",e);
+				NSLog(@"error! = %@",e);
 		}
 	 }
 

@@ -35,7 +35,7 @@
 @end
 
 @interface SBSearchViewController : UIViewController <UIViewControllerTransitioningDelegate>
-+(id)sharedInstance;
++(SBSearchViewController *)sharedInstance;
 -(BOOL)shouldDisplayListLauncher;
 -(void)searchGesture:(id)arg1 changedPercentComplete:(float)arg2;
 -(BOOL)isVisible;
@@ -72,6 +72,10 @@
 - (CAGradientLayer *)visibilityMaskForCell:(UITableViewCell *)cell withLocation:(CGFloat)location;
 -(void)dismissAnimated:(BOOL)arg1 completionBlock:(/*^block*/id)arg2 ;
 
+@end
+
+@interface UITableView (extras)
+-(void)_scrollToTopHidingTableHeader:(BOOL)arg1 ;
 @end
 
 @interface SearchlightViewController : UIViewController

@@ -14,7 +14,7 @@ static NSString *lockscreenIdentifier = nil;
 static NSString *applicationIdentifier = nil;
 static _UIBackdropView *background = nil;
 static int headerStyle = 2060;
-static bool logging, hideKeyboard, selectall, replace_nc, show_badges, clearResults, changeHeader = false;
+static bool logging, hideKeyboard, selectall, replace_nc, show_badges, clearResults, changeHeader, scrolltop = false;
 static bool force_rotation, ls_enabled, blur_section_header_enabled = true;
 static NSCache *nameCache = [NSCache new];
 static NSCache *iconCache = [NSCache new];
@@ -158,6 +158,7 @@ static void loadPrefs() {
 	blur_section_header_enabled = [settings objectForKey:@"blur_section_header_enabled"] ? [[settings objectForKey:@"blur_section_header_enabled"] boolValue] : YES;
 	clearResults = [settings objectForKey:@"clearResults"] ? [[settings objectForKey:@"clearResults"] boolValue] : NO;
 	changeHeader = [settings objectForKey:@"changeHeader"] ? [[settings objectForKey:@"changeHeader"] boolValue] : NO;
+	scrolltop = [settings objectForKey:@"scrolltop"] ? [[settings objectForKey:@"scrolltop"] boolValue] : NO;
 
 
 	enabledSections = [settings objectForKey:@"enabledSections"] ?: @[]; [enabledSections retain];
@@ -1487,6 +1488,11 @@ static void savePrefs() {
 		NSLog(@"main Nav Controller = %@",nc);
 	}	
 	[[%c(SBSearchViewController) sharedInstance] forceRotation];
+
+	if(scrolltop) {
+		[MSHookIvar<UITableView *>([%c(SBSearchViewController) sharedInstance], "_tableView") setContentOffset:CGPointZero animated:YES];
+	}
+
 }
 
 -(void)resetAnimated:(BOOL)arg1 {

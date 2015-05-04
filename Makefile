@@ -12,7 +12,6 @@ Searchlight_FILES = Tweak.xm
 Searchlight_FRAMEWORKS = UIKit QuartzCore CoreGraphics
 Searchlight_PRIVATE_FRAMEWORKS = Preferences
 Searchlight_LIBRARIES = applist
-Searchlight_ARCHS = armv7 arm64
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 

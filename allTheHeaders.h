@@ -25,7 +25,7 @@
 @end
 
 @interface SBSearchTableView : UITableView
-@property(nonatomic) float contentInset;
+//@property(nonatomic) float contentInset;
 @end
 
 @interface CustomTransitionAnimator : NSObject <UIViewControllerAnimatedTransitioning>

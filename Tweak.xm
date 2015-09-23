@@ -134,6 +134,23 @@ static void generateAppList () {
 	[appsettings writeToFile:plistPath atomically:YES];
 }
 
+static void launchApplication() {
+	if(applicationIdentifier) {
+		if(logging) {
+			NSLog(@"Searchlight: about to launch = %@",applicationIdentifier);
+		}
+		@try {
+			[[UIApplication sharedApplication] launchApplicationWithIdentifier:applicationIdentifier suspended:NO];
+		}
+		@catch (NSException * e) {
+			NSLog(@"Searchlight: error! = %@ couldn't launch app",e);
+		}
+	}
+	applicationIdentifier = nil;
+}
+
+
+
 static void loadPrefs() {
 
 	NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/org.thebigboss.searchlight.plist"];
@@ -141,6 +158,7 @@ static void loadPrefs() {
 	logging = [settings objectForKey:@"logging_enabled"] ? [[settings objectForKey:@"logging_enabled"] boolValue] : NO;
 
 	if(logging) NSLog(@"Searchlight Settings = %@",settings);
+
 
 	hideKeyboard = [settings objectForKey:@"hide_keyboard"] ? [[settings objectForKey:@"hide_keyboard"] boolValue] : NO;
 
@@ -286,18 +304,23 @@ static void savePrefs() {
         	if([[%c(SpringBoard) sharedApplication].keyWindow.rootViewController isEqual:cusViewController] || cusViewController) {
         		dispatch_async(dispatch_get_main_queue(), ^{
         			//[cusViewController dismissViewControllerAnimated:NO  completion:nil];
-					[cusViewController.view removeFromSuperview];
-					NSLog(@"this was called");
+        			if(cusViewController && cusViewController.view) {
+        				[cusViewController.view removeFromSuperview];
+        				NSLog(@"this was called - removing cusViewController.view from superview");
+        			}
 				});
         		// [cusViewController release];
         		// cusViewController = nil;
-        		[%c(SpringBoard) sharedApplication].keyWindow.rootViewController = nil;
-        		[%c(SpringBoard) sharedApplication].keyWindow.windowLevel = beforeWindowLevel;
+        		if([%c(SpringBoard) sharedApplication].keyWindow && [%c(SpringBoard) sharedApplication].keyWindow.rootViewController) {
+        			[%c(SpringBoard) sharedApplication].keyWindow.rootViewController = nil;
+        			[%c(SpringBoard) sharedApplication].keyWindow.windowLevel = beforeWindowLevel;
+        		}
         	} 
         	if(statusBarWasHidden) {
         		[[%c(SpringBoard) sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationSlide];
         		statusBarWasHidden = NO;
         	}
+        	launchApplication();
             [transitionContext completeTransition:YES];
         }];
     }
@@ -738,7 +761,7 @@ static void savePrefs() {
 			[atable _scrollToTopHidingTableHeader:YES];
 			//atable.edgesForExtendedLayout = UIRectEdgeNone;
 
-		}
+		} 
 	}
 
 
@@ -765,6 +788,8 @@ static void savePrefs() {
 			[sheader.searchField becomeFirstResponder];
 		}
 		//[[%c(SBSearchViewController) sharedInstance] repositionCells];
+	} else {
+		launchApplication();
 	}
 	
 }
@@ -1059,7 +1084,6 @@ static void savePrefs() {
 
     if ([self shouldDisplayListLauncher]) {
     	[self dismissAnimated:YES completionBlock:nil];
-
     	NSString *identifier = @"";
 
     	if([[enabledSections objectAtIndex:indexPath.section] isEqual:@"Application List"]) {
@@ -1078,12 +1102,7 @@ static void savePrefs() {
 		// SBIcon *icon = [model expectedIconForDisplayIdentifier:identifier];
 		[self _fadeForLaunchWithDuration:0.3f completion:^void{
 			//[icon launchFromLocation:0];
-			@try {
-				[[UIApplication sharedApplication] launchApplicationWithIdentifier:identifier suspended:NO];
-			}
-			@catch (NSException * e) {
-				NSLog(@"error! = %@",e);
-			}
+			applicationIdentifier = identifier;
 		}];
 
 		if ([(SpringBoard*)[%c(SpringBoard) sharedApplication] isLocked]) {
@@ -1508,9 +1527,6 @@ static void savePrefs() {
 		NSLog(@"main Nav Controller = %@",nc);
 	}	
 	[[%c(SBSearchViewController) sharedInstance] forceRotation];
-
-
-
 }
 
 -(void)resetAnimated:(BOOL)arg1 {
@@ -1539,6 +1555,17 @@ static void savePrefs() {
 
 	if(didAddViewController || didNotAddViewController) {
 		if(logging) NSLog(@"Searchlight: reseting view controller. ");
+
+		if([[%c(SBSearchViewController) sharedInstance] isVisible]) {
+				if(logging) NSLog(@"Going to try orig");
+				@try {
+					%orig;
+				}
+				@catch (NSException * e) {
+						NSLog(@"error! = %@",e);
+				}
+			}
+
 
 		if(statusBarWasHidden){
 			[[%c(SpringBoard) sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationSlide];
@@ -1570,15 +1597,6 @@ static void savePrefs() {
 			// if([[%c(SpringBoard) sharedApplication].keyWindow.rootViewController isEqual:cusViewController]) {
 			// 	[%c(SpringBoard) sharedApplication].keyWindow.rootViewController = nil;
 			// }
-			if([[%c(SBSearchViewController) sharedInstance] isVisible]) {
-				if(logging) NSLog(@"Going to try orig");
-				@try {
-					%orig;
-				}
-				@catch (NSException * e) {
-						NSLog(@"error! = %@",e);
-				}
-			}
 			
 			didAddViewController = NO;
 			didNotAddViewController = NO;
@@ -1593,32 +1611,20 @@ static void savePrefs() {
 		}
 	 }
 
-	if(applicationIdentifier) {
-		if(logging) {
-			NSLog(@"Searchlight: about to launch = %@",applicationIdentifier);
-		}
-		@try {
-			[[UIApplication sharedApplication] launchApplicationWithIdentifier:applicationIdentifier suspended:NO];
-		}
-		@catch (NSException * e) {
-			NSLog(@"Searchlight: error! = %@",e);
-		}
-	}
-	applicationIdentifier = nil;
 
-	if(logging) NSLog(@"Searchlight: done with resetAnimated");
-
-	if(cusViewController) {
-		dispatch_async(dispatch_get_main_queue(), ^{
-			//[cusViewController dismissViewControllerAnimated:NO  completion:nil];
+	 dispatch_async(dispatch_get_main_queue(), ^{
+		//[cusViewController dismissViewControllerAnimated:NO  completion:nil];
+		if(cusViewController && cusViewController.view) {
 			[cusViewController.view removeFromSuperview];
-			//[cusViewController release];
-			NSLog(@"this was called");
-		});
-	}
-		
+		}
+		NSLog(@"this was called - removing cusViewController.view from superview inside resetAnimated");
+	});
+
+	if(logging) NSLog(@"Searchlight: done with resetAnimated");	
 }
 %end
+
+
 
 %hook SBApplication
 -(void)_didSuspend {
@@ -1657,7 +1663,12 @@ static void savePrefs() {
 // }
 %end
 
+extern void _CFEnableZombies(void);
+void _CFEnableZombies(void) {
+}
+
 %ctor {
+
 	NSLog(@"Loading ListLauncher7...");
 
 	dlopen("/Library/MobileSubstrate/DynamicLibraries/SpotDefine.dylib", RTLD_NOW);
@@ -1665,6 +1676,12 @@ static void savePrefs() {
 	dlopen("/Library/MobileSubstrate/DynamicLibraries/SmartSearch.dylib", RTLD_NOW);
     //CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)loadPrefs, CFSTR("org.thebigboss.listlauncher7/settingschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
     
+    _CFEnableZombies();
+    setenv ("NSZombieEnabled", "YES", 1);
+	
+
+
+
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)savePrefs, CFSTR("org.thebigboss.searchlight/saved"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 
     //loadPrefs();

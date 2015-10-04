@@ -135,18 +135,20 @@ static void generateAppList () {
 }
 
 static void launchApplication() {
-	if(applicationIdentifier) {
-		if(logging) {
-			NSLog(@"Searchlight: about to launch = %@",applicationIdentifier);
+	@synchronized(applicationIdentifier) {
+		if(applicationIdentifier) {
+			if(logging) {
+				NSLog(@"Searchlight: about to launch = %@",applicationIdentifier);
+			}
+			@try {
+				[[UIApplication sharedApplication] launchApplicationWithIdentifier:applicationIdentifier suspended:NO];
+			}
+			@catch (NSException * e) {
+				NSLog(@"Searchlight: error! = %@ couldn't launch app",e);
+			}
 		}
-		@try {
-			[[UIApplication sharedApplication] launchApplicationWithIdentifier:applicationIdentifier suspended:NO];
-		}
-		@catch (NSException * e) {
-			NSLog(@"Searchlight: error! = %@ couldn't launch app",e);
-		}
+		applicationIdentifier = nil;
 	}
-	applicationIdentifier = nil;
 }
 
 
